@@ -120,6 +120,10 @@ def add_lag_features(df_clean):
     df_ts['Rolling_Avg_3'] = stint_group['LapTime_Sec'].transform(
         lambda x: x.rolling(window=3).mean().shift(1)
     )
+
+    df_ts['Target_Delta'] = df_ts['LapTime_Sec'] - df_ts['Prev_LapTime']
+    df_ts['Prev_Delta'] = df_ts['Prev_LapTime'] - df_ts['Lag_2']
+
     
     df_ts = df_ts.dropna(subset=['Prev_LapTime', 'Rolling_Avg_3']).reset_index(drop=True)
     df_ts = df_ts.drop(columns=['Micro_Stint_ID'])
@@ -184,7 +188,8 @@ def clean_laps(df):
        'Accumulated_Tyre_Wear', 'Micro_Stint_ID', 'Prev_LapTime',
        'Lag_2', 'Rolling_Avg_3',
        'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',
-       'LatOffset_Mean', 'LatOffset_Std']
+       'LatOffset_Mean', 'LatOffset_Std',
+       'Target_Delta', 'Prev_Delta']
 
     valid_cols = [c for c in cols_to_keep if c in df_clean.columns]
 
@@ -200,6 +205,27 @@ def get_pirelli_press_data(file_path):
     df = pd.read_csv(file_path)
     return df
 
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+
+def encode_categorical_features(df):
+    """
+    Label encodes 'Driver', 'Location', and 'Team' columns.
+    """
+    df_encoded = df.copy()
+    encoders = {}
+    
+    cols_to_encode = ['Driver', 'Location', 'Team']
+    
+    for col in cols_to_encode:
+        if col in df_encoded.columns:
+            le = LabelEncoder()
+            df_encoded[f"{col}_Encoded"] = le.fit_transform(df_encoded[col].astype(str))
+            encoders[col] = le
+        else:
+            print(f"Column '{col}' not found in dataframe")
+
+    return df_encoded, encoders
 
 if __name__ == "__main__":
     start = time.time()
@@ -222,6 +248,8 @@ if __name__ == "__main__":
     df_clean = clean_laps(df_telemetry)
 
     df_lag = add_lag_features(df_clean)
+
+    df_lag, label_encoders = encode_categorical_features(df_lag)
 
     df_lag.to_csv('data/dataset_with_telemetry.csv', index=False)
 

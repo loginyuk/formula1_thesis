@@ -4,3 +4,5 @@ __pycache__
 .vscode/
 data/dataset_with_telemetry_2023.csv
 dataset.csv
+test.py
+results/
