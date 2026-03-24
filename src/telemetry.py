@@ -115,6 +115,56 @@ def build_accumulated_wear(df_laps):
     
     return df
 
+def calculate_lateral_offset(tgt_tel, ref_nd, ix, iy, window):
+    """
+    Calculate the lateral offset of the target telemetry from the reference racing line using vectorized operations
+    """
+    tgt_tel = tgt_tel.copy()
+    
+    # smooth the target lap coordinates
+    tgt_tel['X'] = savgol_filter(tgt_tel['X'].values, window, polyorder=3)
+    tgt_tel['Y'] = savgol_filter(tgt_tel['Y'].values, window, polyorder=3)
+    
+    # calculation of the reference point on the line for each target point
+    nd = np.clip(tgt_tel['NormDist'].values, ref_nd.min(), ref_nd.max())
+    rx, ry = ix(nd), iy(nd)
+    vx, vy = tgt_tel['X'].values - rx, tgt_tel['Y'].values - ry
+    
+    eps = 0.002
+    nd_lo = np.clip(nd - eps, ref_nd.min(), ref_nd.max())
+    nd_hi = np.clip(nd + eps, ref_nd.min(), ref_nd.max())
+    dx = ix(nd_hi) - ix(nd_lo)
+    dy = iy(nd_hi) - iy(nd_lo)
+    
+    length = np.sqrt(dx**2 + dy**2)
+    length = np.where(length < 1e-9, 1.0, length)
+    tx, ty = dx / length, dy / length
+    nx, ny = ty, -tx
+    
+    tgt_tel['LateralOffset_m'] = np.abs((vx * nx + vy * ny) / 10.0)
+    return tgt_tel
+
+def get_reference_lap(session):
+    """
+    Get the reference lap telemetry and prepare interpolation functions for the racing line
+    """
+    q_laps = session.laps.pick_quicklaps().pick_wo_box()
+    ref_lap = q_laps.pick_fastest()
+    ref_tel = ref_lap.get_telemetry().add_distance().dropna(subset=['X', 'Y', 'Distance'])
+    ref_tel['NormDist'] = ref_tel['Distance'] / ref_tel['Distance'].max()
+    ref_tel = ref_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)
+
+    window = min(15, len(ref_tel) if len(ref_tel) % 2 == 1 else len(ref_tel) - 1)
+    ref_x_smooth = savgol_filter(ref_tel['X'].values, window, polyorder=3)
+    ref_y_smooth = savgol_filter(ref_tel['Y'].values, window, polyorder=3)
+    ref_nd = ref_tel['NormDist'].values
+
+    ix = interp1d(ref_nd, ref_x_smooth, kind='linear', fill_value="extrapolate")
+    iy = interp1d(ref_nd, ref_y_smooth, kind='linear', fill_value="extrapolate")
+
+    return ref_nd, ix, iy, window
+
+
 def generate_telemetry_features_dataset(session, df_laps):
     """
     Main pipeline function to generate telemetry features dataset
@@ -129,8 +179,12 @@ def generate_telemetry_features_dataset(session, df_laps):
 
     df_laps['E_lap'] = np.nan
     df_laps['Gap_To_Car_Ahead'] = 5.0
+    df_laps['LatOffset_Mean'] = np.nan
+    df_laps['LatOffset_Std'] = np.nan
     
     active_drivers = df_laps['Driver'].unique()
+
+    ref_nd, ix, iy, window = get_reference_lap(session)
 
     # get telemetry
     all_telemetry = {}
@@ -146,7 +200,7 @@ def generate_telemetry_features_dataset(session, df_laps):
         except Exception:
             pass
 
-    # apply calculations to telemetry
+    # apply dirty air and tyre energy calculations to telemetry
     for drv, tel in all_telemetry.items():
         tel['Gap_To_Car_Ahead'] = calculate_dirty_air(drv, all_telemetry)
         tel['Energy_Tick'] = calculate_energy(tel)
@@ -166,20 +220,27 @@ def generate_telemetry_features_dataset(session, df_laps):
             drv_tel = all_telemetry[driver]
             
             mask = (drv_tel['SessionTime'] >= lap_start) & (drv_tel['SessionTime'] <= lap_end)
-            lap_tel = drv_tel.loc[mask]
+            lap_tel = drv_tel.loc[mask].copy()
             
-            if not lap_tel.empty:
+            if not lap_tel.empty and len(lap_tel) >= 10:
                 df_laps.loc[idx, 'E_lap'] = lap_tel['Energy_Tick'].sum()
                 df_laps.loc[idx, 'Gap_To_Car_Ahead'] = lap_tel['Gap_To_Car_Ahead'].mean()
-        except Exception as e:
-            pass
-            
-    df_final = build_accumulated_wear(df_laps)
 
-    q_laps = session.laps.pick_quicklaps().pick_wo_box()
-    df_final = df_final[df_final.set_index(['Driver', 'LapNumber']).index.isin(q_laps.set_index(['Driver', 'LapNumber']).index)]
+                # start lateral offset calculation
+                lap_dist = lap_tel['Distance'] - lap_tel['Distance'].min()
+                lap_tel['NormDist'] = lap_dist / lap_dist.max()				
+                lap_tel = lap_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)
+
+                lap_offset_tel = calculate_lateral_offset(lap_tel, ref_nd, ix, iy, window)
+                
+                df_laps.loc[idx, 'LatOffset_Mean'] = lap_offset_tel['LateralOffset_m'].mean()
+                df_laps.loc[idx, 'LatOffset_Std'] = lap_offset_tel['LateralOffset_m'].std()
+                
+        except Exception as e:
+            print(f"Error processing telemetry for driver {driver} lap {row['LapNumber']}: {e}")
+            continue
     
-    return df_final.reset_index(drop=True)
+    return df_laps
     
 
 def run_telemetry_feature_generation(session, df):

@@ -2,6 +2,7 @@ import fastf1
 import os
 import numpy as np
 import pandas as pd
+import time
 
 from telemetry import run_telemetry_feature_generation
 
@@ -150,7 +151,6 @@ def remove_wet_laps(df):
     return df_dry
 
 
-
 def clean_laps(df):
     """
     Deletes in/out, SC/VSC laps and keeps only needed columns
@@ -183,7 +183,8 @@ def clean_laps(df):
        'Gap_To_Car_Ahead', 'P_surface', 'M_aero', 'Lap_Damage',
        'Accumulated_Tyre_Wear', 'Micro_Stint_ID', 'Prev_LapTime',
        'Lag_2', 'Rolling_Avg_3',
-       'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta']
+       'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',
+       'LatOffset_Mean', 'LatOffset_Std']
 
     valid_cols = [c for c in cols_to_keep if c in df_clean.columns]
 
@@ -201,6 +202,7 @@ def get_pirelli_press_data(file_path):
 
 
 if __name__ == "__main__":
+    start = time.time()
     os.makedirs("cache", exist_ok=True)
     fastf1.Cache.enable_cache('cache')
 
@@ -211,7 +213,7 @@ if __name__ == "__main__":
     df_weather = merge_weather(session, laps)
     df_fuel = calculate_physics_fuel_load(session, df_weather)
 
-    df_pirelli = get_pirelli_press_data('track_parameters.csv')
+    df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
     df_track = add_physics_track_evolution(df_fuel, df_pirelli)
 
     # telemetry features
@@ -221,5 +223,6 @@ if __name__ == "__main__":
 
     df_lag = add_lag_features(df_clean)
 
-    os.makedirs("data", exist_ok=True)
     df_lag.to_csv('data/dataset_with_telemetry.csv', index=False)
+
+    print(f"Data preparation completed in {time.time() - start:.2f} seconds")
