@@ -2,7 +2,7 @@ cache/
 .DS_Store
 __pycache__
 .vscode/
-data/dataset_with_telemetry_2023.csv
 dataset.csv
 test.py
 results/
+errors.txt

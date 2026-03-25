@@ -3,6 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import time
+from sklearn.preprocessing import LabelEncoder
+
 
 from telemetry import run_telemetry_feature_generation
 
@@ -205,8 +207,6 @@ def get_pirelli_press_data(file_path):
     df = pd.read_csv(file_path)
     return df
 
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 
 def encode_categorical_features(df):
     """
@@ -227,30 +227,52 @@ def encode_categorical_features(df):
 
     return df_encoded, encoders
 
+
 if __name__ == "__main__":
-    start = time.time()
+    start_time = time.time()
     os.makedirs("cache", exist_ok=True)
     fastf1.Cache.enable_cache('cache')
 
-    session = fastf1.get_session(2023, "Silverstone", 'R')
-    session.load()
-
-    laps, drivers, stints = prepare_race(session)
-    df_weather = merge_weather(session, laps)
-    df_fuel = calculate_physics_fuel_load(session, df_weather)
-
     df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
-    df_track = add_physics_track_evolution(df_fuel, df_pirelli)
+    locations = df_pirelli['Location'].unique()
+    
+    YEAR = 2023
+    full_dataset = []
 
-    # telemetry features
-    df_telemetry = run_telemetry_feature_generation(session, df_track)
+    for location in locations:
+        print(f"\n{'-'*55}")
+        print(f"Processing: {YEAR} - {location}\n")
 
-    df_clean = clean_laps(df_telemetry)
+        try:
+            session = fastf1.get_session(YEAR, location, 'R')
+            session.load()
 
-    df_lag = add_lag_features(df_clean)
+            laps, drivers, stints = prepare_race(session)
+            df_weather = merge_weather(session, laps)
+            df_fuel = calculate_physics_fuel_load(session, df_weather)
+            df_track = add_physics_track_evolution(df_fuel, df_pirelli)
 
-    df_lag, label_encoders = encode_categorical_features(df_lag)
+            # telemetry features
+            df_telemetry = run_telemetry_feature_generation(session, df_track)
+            
+            df_clean = clean_laps(df_telemetry)
+            df_lag = add_lag_features(df_clean)
 
-    df_lag.to_csv('data/dataset_with_telemetry.csv', index=False)
+            full_dataset.append(df_lag)
+            print(f"{location} processed {len(df_lag)} rows")
 
-    print(f"Data preparation completed in {time.time() - start:.2f} seconds")
+        except Exception as e:
+            print(f"Could not process {location}. Error: {e}")
+            continue
+
+    
+    if full_dataset:
+        df_final_season = pd.concat(full_dataset, ignore_index=True)
+        df_final_season, label_encoders = encode_categorical_features(df_final_season)
+        df_final_season.to_csv(f'data/dataset_with_telemetry_{YEAR}.csv', index=False)
+        
+        total_time = (time.time() - start_time) / 60
+        print(f"Season time taken {total_time:.2f} minutes")
+        print(f"Total laps compiled: {len(df_final_season)}")
+    else:
+        print("No races were successfully processed")

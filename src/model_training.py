@@ -6,76 +6,25 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 import time
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import math
 
 def convert_deltas_to_absolute_times(simulation_results, df_with_telemetry):
     """
     Converts deltas time back to absolute lap times
     """
     simulation_results = simulation_results.merge(
-        df_with_telemetry[['Driver', 'LapNumber', 'Prev_LapTime']], 
-        on=['Driver', 'LapNumber'], how='left'
-    )
+        df_with_telemetry[['Location', 'Driver', 'LapNumber', 'Prev_LapTime']], 
+        on=['Location', 'Driver', 'LapNumber'], how='left')
 
     simulation_results['Predicted_Time'] = simulation_results['Prev_LapTime'] + simulation_results['Predicted']
     simulation_results['Actual_Time'] = simulation_results['Prev_LapTime'] + simulation_results['Actual']
 
     simulation_results['Predicted'] = simulation_results['Predicted_Time']
     simulation_results['Actual'] = simulation_results['Actual_Time']
+    
     simulation_results.drop(columns=['Predicted_Time', 'Actual_Time', 'Prev_LapTime'], inplace=True)
+    
     return simulation_results
-
-def run_walk_forward_validation(df, features, model, target='LapTime_Sec', initial_train_size=20, print_progress=False):
-    start_time = time.time()
-
-    df = df.sort_values(by=['Driver', 'LapNumber']).reset_index(drop=True)
-    drivers = df['Driver'].unique()
-    predictions_log = []
-    
-    for driver in drivers:
-        driver_df = df[df['Driver'] == driver].reset_index(drop=True)
-        
-        if len(driver_df) < initial_train_size + 5:
-            continue
-        
-        # train starting from the initial lap
-        for i in range(initial_train_size, len(driver_df)):
-            train_data = driver_df.iloc[:i]
-            test_row = driver_df.iloc[[i]]
-            
-            X_train = train_data[features]
-            y_train = train_data[target]
-            
-            X_test = test_row[features]
-            y_actual = test_row[target].values[0]
-            
-            current_model = clone(model)
-
-            current_model.fit(X_train, y_train)
-            pred_value = current_model.predict(X_test)[0]
-            
-            predictions_log.append({
-                'Driver': driver,
-                'LapNumber': test_row['LapNumber'].values[0],
-                'Stint': test_row['Stint'].values[0] if 'Stint' in test_row else 0,
-                'Actual': y_actual,
-                'Predicted': pred_value,
-                'Error': abs(y_actual - pred_value)
-            })
-    
-    results_df = pd.DataFrame(predictions_log)
-    
-    mae = mean_absolute_error(results_df['Actual'], results_df['Predicted'])
-    rmse = np.sqrt(mean_squared_error(results_df['Actual'], results_df['Predicted']))
-    
-    end_time = time.time()
-    if print_progress:
-        print(f"Total Laps Predicted: {len(results_df)}")
-        print(f"Average MAE: {mae:.3f} s")
-        print(f"RMSE: {rmse:.3f} s")
-        print(f"Time Taken: {end_time - start_time:.1f} seconds")
-    
-    return results_df
 
 
 def feature_importance_walk_forward_delta(df, features):
@@ -99,7 +48,7 @@ def feature_importance_walk_forward_delta(df, features):
     
     plt.tight_layout()
     # plt.show()
-    plt.savefig('results/feature_importance.png', dpi=300)
+    plt.savefig('results/feature_importance_season.png', dpi=300)
     
     return importance_df
 
@@ -144,15 +93,161 @@ def analyze_slope_prediction(results_df, driver_code, stint_id):
     print(f"Predicted Degradation: {slope_pred:.4f} s/lap")
     print(f"Slope Error:           {error:.4f} s/lap")
 
+
+def plot_full_season_slopes(results_df, driver_code):
+    rounds = sorted(results_df['Location_Encoded'].unique())
+    num_rounds = len(rounds)
+    
+    if num_rounds == 0:
+        print(f"No data found for the {driver_code}")
+        return
+
+    cols = 2
+    rows = math.ceil(num_rounds / cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 5 * rows), constrained_layout=True)
+    
+    if num_rounds > 1:
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+
+    for i, round_num in enumerate(rounds):
+        ax = axes[i]
+        
+        race_data = results_df[
+            (results_df['Driver'] == driver_code) & 
+            (results_df['Location_Encoded'] == round_num)
+        ]
+        
+        if not race_data.empty and 'Location' in race_data.columns:
+            circuit_name = race_data['Location'].iloc[0]
+        else:
+            circuit_name = f"Round {round_num}"
+        
+        stints = sorted(race_data['Stint'].unique())
+        has_data = False 
+        
+        for stint_id in stints:
+            stint_data = race_data[race_data['Stint'] == stint_id]
+            
+            if len(stint_data) < 5:
+                continue
+
+            x = stint_data['LapNumber'].values
+            y_actual = stint_data['Actual'].values
+            y_pred = stint_data['Predicted'].values
+        
+            mask = np.isfinite(y_actual) & np.isfinite(y_pred)
+            if np.sum(mask) < 2: 
+                continue
+                
+            x_clean = x[mask]
+            y_act_clean = y_actual[mask]
+            y_pred_clean = y_pred[mask]
+
+            # calculate slopes
+            slope_act, intercept_act = np.polyfit(x_clean, y_act_clean, 1)
+            slope_pred, intercept_pred = np.polyfit(x_clean, y_pred_clean, 1)
+            
+
+            line, = ax.plot(x_clean, slope_act*x_clean + intercept_act, 
+                            linestyle='-', linewidth=2, alpha=0.8, 
+                            label=f'S{int(stint_id)} Act ({slope_act:.3f})')
+            
+            color = line.get_color()
+            ax.scatter(x_clean, y_act_clean, color=color, alpha=0.3, s=15, marker='o')
+            ax.plot(x_clean, slope_pred*x_clean + intercept_pred, 
+                    color=color, linestyle='--', linewidth=2, alpha=0.8)
+            ax.scatter(x_clean, y_pred_clean, color=color, alpha=0.3, s=15, marker='x')
+            
+            has_data = True
+
+        ax.set_title(f"{circuit_name} (R{int(round_num)})", fontsize=12, fontweight='bold')
+        ax.set_xlabel("Lap Number")
+        ax.set_ylabel("Lap Time (s)")
+        ax.grid(True, alpha=0.2)
+        
+        if has_data:
+            ax.legend(fontsize=9, loc='upper right')
+
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+        
+    plt.suptitle(f"2023 Season Degradation Analysis: {driver_code}", fontsize=16)
+    # plt.show()
+    plt.savefig(f'results/season_degradation_{driver_code}.png', dpi=300)
+
+
+def run_season_walk_forward(df, features, model, target='LapTime_Sec', min_train_races=5, print_progress=True):
+    start_time = time.time()
+    
+    df = df.sort_values(by='Time').reset_index(drop=True)
+    
+    races = df['Location'].unique()
+    predictions_log = []
+    
+    print(f"Total races in dataset: {len(races)}")
+    print(f"Initial training on first {min_train_races} races...\n")
+
+    # train on full races and test on the next one, iterating through the season
+    for i in range(min_train_races, len(races)):
+        train_races = races[:i]
+        test_race = races[i]
+        
+        train_data = df[df['Location'].isin(train_races)]
+        test_data = df[df['Location'] == test_race].copy()
+        
+        X_train = train_data[features]
+        y_train = train_data[target]
+        
+        X_test = test_data[features]
+        y_actual = test_data[target].values
+        
+        current_model = clone(model)
+        current_model.fit(X_train, y_train)
+        
+        preds = current_model.predict(X_test)
+        
+        test_data['Predicted'] = preds
+        test_data['Actual'] = y_actual
+        test_data['Error'] = np.abs(y_actual - preds)
+        
+        predictions_log.append(test_data[['Location', 'Location_Encoded', 'Driver', 'LapNumber', 'Stint', 'Compound', 'Actual', 'Predicted', 'Error']])
+        
+        if print_progress:
+            race_mae = mean_absolute_error(y_actual, preds)
+            print(f"Tested on {test_race} | Train size: {len(train_data)} laps | MAE: {race_mae:.3f} s")
+            
+    results_df = pd.concat(predictions_log, ignore_index=True)
+    
+    global_mae = mean_absolute_error(results_df['Actual'], results_df['Predicted'])
+    global_rmse = np.sqrt(mean_squared_error(results_df['Actual'], results_df['Predicted']))
+    
+    end_time = time.time()
+    if print_progress:
+        print(f"\n{'-'*30}")
+        print(f"Total Test Laps Predicted: {len(results_df)}")
+        print(f"Global Average MAE: {global_mae:.3f} s")
+        print(f"Global RMSE: {global_rmse:.3f} s")
+        print(f"Time Taken: {end_time - start_time:.1f} seconds")
+    
+    return results_df
+
+
 if __name__ == "__main__":
     start = time.time()
-    df_with_telemetry = pd.read_csv('data/dataset_with_telemetry.csv')
+    df_with_telemetry = pd.read_csv('data/dataset_with_telemetry_2023.csv')
     features = [
         'LapNumber', 'Stint',
         'TyreLife', 'AirTemp', 'Humidity', 'Pressure',
         'TrackTemp', 'WindDirection', 'WindSpeed',
         'FuelLoad', 'Track_Evolution_Physics',
-        'Track_Flow_Type',
+        'Traction_1_5',
+        'Asphalt_Grip_1_5', 'Asphalt_Abrasion_1_5', 'Track_Evolution_1_5',
+        'Tyre_Stress_1_5', 'Braking_1_5', 'Lateral_1_5', 'Downforce_1_5',
+        'Min_Pressure_Front_PSI', 'Min_Pressure_Rear_PSI', 
+        'Wear_Severity_Index', 'Track_Flow_Type',
+        'Circuit_Length_KM', 'Cumulative_Field_Dist_KM',
         'Compound_Int', 'E_lap', 'Gap_To_Car_Ahead', 'Grip_Aero_Balance',
         'Total_Min_Pressure', 'Pressure_Delta', 'LatOffset_Mean',
         'LatOffset_Std', 'Lap_Gap', 'Prev_LapTime', 'Lag_2', 'Rolling_Avg_3',
@@ -160,11 +255,8 @@ if __name__ == "__main__":
     ]
     model = XGBRegressor(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42)
     
-    simulation_results = run_walk_forward_validation(df_with_telemetry, features, model, print_progress=True)
+    simulation_results = run_season_walk_forward(df_with_telemetry, features, model, target='Target_Delta', print_progress=True)
     simulation_results = convert_deltas_to_absolute_times(simulation_results, df_with_telemetry)
 
     importance_df = feature_importance_walk_forward_delta(df_with_telemetry, features)
-
-    for driver in simulation_results['Driver'].unique():
-        for stint in simulation_results[simulation_results['Driver'] == driver]['Stint'].unique():
-            analyze_slope_prediction(simulation_results, driver, stint)
+    plot_full_season_slopes(simulation_results, 'VER')
