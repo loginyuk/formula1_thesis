@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 
 
 from telemetry import run_telemetry_feature_generation
+from clustering_lap import plot_cluster_verification
 
 def prepare_race(session):
     """
@@ -191,6 +192,13 @@ def clean_laps(df):
        'Lag_2', 'Rolling_Avg_3',
        'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',
        'LatOffset_Mean', 'LatOffset_Std',
+       'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+       'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+       'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+       'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+       'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+       'Mean_Speed_CV', 'Std_Speed_CV',
+       'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
        'Target_Delta', 'Prev_Delta']
 
     valid_cols = [c for c in cols_to_keep if c in df_clean.columns]
@@ -235,7 +243,7 @@ if __name__ == "__main__":
 
     df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
     locations = df_pirelli['Location'].unique()
-    
+
     YEAR = 2023
     full_dataset = []
 
@@ -252,7 +260,7 @@ if __name__ == "__main__":
             df_fuel = calculate_physics_fuel_load(session, df_weather)
             df_track = add_physics_track_evolution(df_fuel, df_pirelli)
 
-            # telemetry features
+            # telemetry features + clustering
             df_telemetry = run_telemetry_feature_generation(session, df_track)
             
             df_clean = clean_laps(df_telemetry)
@@ -269,8 +277,10 @@ if __name__ == "__main__":
     if full_dataset:
         df_final_season = pd.concat(full_dataset, ignore_index=True)
         df_final_season, label_encoders = encode_categorical_features(df_final_season)
-        df_final_season.to_csv(f'data/dataset_with_telemetry_{YEAR}.csv', index=False)
-        
+        df_final_season.to_csv(f'data/dataset_{YEAR}.csv', index=False)
+
+        plot_cluster_verification(df_final_season)
+
         total_time = (time.time() - start_time) / 60
         print(f"Season time taken {total_time:.2f} minutes")
         print(f"Total laps compiled: {len(df_final_season)}")

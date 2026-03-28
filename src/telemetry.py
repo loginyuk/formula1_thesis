@@ -3,6 +3,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 import time
+from clustering_lap import run_clustering_features
 
 def add_derived_features(df):
     """"
@@ -240,13 +241,28 @@ def generate_telemetry_features_dataset(session, df_laps):
             print(f"Error processing telemetry for driver {driver} lap {row['LapNumber']}: {e}")
             continue
     
+    # run clustering
+    clustering_laps = df_laps[
+        (df_laps['TrackStatus'] == '1') &
+        (df_laps['PitInTime'].isna()) &
+        (df_laps['PitOutTime'].isna()) &
+        (df_laps.get('FastF1Generated', False) == False)
+    ].reset_index(drop=True)
+
+    try:
+        df_clustered = run_clustering_features(session, clustering_laps, all_telemetry=all_telemetry)
+        if not df_clustered.empty:
+            df_laps = df_laps.merge(df_clustered, on=['Driver', 'LapNumber'], how='left')
+    except Exception as e:
+        print(f"Clustering features failed: {e}")
+
     return df_laps
-    
+
 
 def run_telemetry_feature_generation(session, df):
     start = time.time()
     df_race_wear = generate_telemetry_features_dataset(session, df)
-    
+
     end = time.time()
     print(f"\nTelemetry features time taken: {end - start:.4f} seconds\n")
 

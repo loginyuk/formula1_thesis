@@ -102,10 +102,11 @@ def extract_corner_features(corner_tel):
     }
 
 
-def build_corner_database(session, laps):
+def build_corner_database(session, laps, all_telemetry=None):
     """
     Builds a corner-level database of driving style metrics.
-    Loads continuous telemetry per driver
+    If all_telemetry dict is provided, uses it directly.
+    Otherwise loads telemetry per driver from the session.
     """
     corners_info = session.get_circuit_info().corners
     corner_zones = {
@@ -118,9 +119,15 @@ def build_corner_database(session, laps):
         drv_laps = laps[laps['Driver'] == drv]
 
         try:
-            full_tel = session.laps.pick_drivers(drv).get_telemetry()
-            if 'Distance' not in full_tel.columns:
-                full_tel.add_distance()
+            if all_telemetry is not None and drv in all_telemetry:
+                full_tel = all_telemetry[drv].copy()
+                if 'Distance' not in full_tel.columns:
+                    full_tel = full_tel.copy()
+                    full_tel['Distance'] = np.nan
+            else:
+                full_tel = session.laps.pick_drivers(drv).get_telemetry()
+                if 'Distance' not in full_tel.columns:
+                    full_tel.add_distance()
             full_tel = add_curvature_to_telemetry(full_tel)
         except Exception as e:
             print(f"Telemetry load failed for {drv}: {e}")
@@ -266,9 +273,10 @@ def align_labels(new_means, ref_means):
     return {new: ref for ref, new in zip(row_ind, col_ind)}
 
 
-def fit_gmm(X, n_clusters, reference_means=None):
+def fit_gmm(X, n_clusters):
     """
-    Fits GMM to the normalized data, returns aligned probabilities and labels
+    Fits GMM to the normalized data, orders clusters by aggression score,
+    returns aligned probabilities and labels
     """
     gmm = GaussianMixture(n_components=n_clusters, covariance_type='full', random_state=42, n_init=10)
     gmm.fit(X)
@@ -276,19 +284,14 @@ def fit_gmm(X, n_clusters, reference_means=None):
     raw_proba  = gmm.predict_proba(X)
     raw_labels = np.argmax(raw_proba, axis=1)
 
-    if reference_means is None:
-        means = np.array([X[raw_labels == c].mean(axis=0)
-                          for c in range(n_clusters)])
-        
-        # order clusters by aggression = high entry speed + low throttle on distance
-        aggression = (- means[:, 1] + means[:, 2])
-        order = np.argsort(aggression)[::-1]
-        label_map = {old: new for new, old in enumerate(order)}
-        reference_means = means[order]
-    else:
-        means = np.array([X[raw_labels == c].mean(axis=0)
-                               for c in range(n_clusters)])
-        label_map = align_labels(means, reference_means)
+    means = np.array([X[raw_labels == c].mean(axis=0)
+                      for c in range(n_clusters)])
+
+    # always order by aggression = low throttle-on distance + high throttle integral
+    aggression = (-means[:, 1] + means[:, 2])
+    order = np.argsort(aggression)[::-1]
+    label_map = {old: new for new, old in enumerate(order)}
+    reference_means = means[order]
 
     aligned = np.zeros_like(raw_proba)
     for raw_id, aligned_id in label_map.items():
@@ -297,23 +300,23 @@ def fit_gmm(X, n_clusters, reference_means=None):
     return gmm, aligned, np.argmax(aligned, axis=1), reference_means
 
 
-def cluster_laps(df_laps_norm, z_features, n_clusters, reference_means=None):
+def cluster_laps(df_laps_norm, z_features, n_clusters):
     """
     Main function to fit GMM and label laps with cluster probabilities and IDs
     """
     X = df_laps_norm[z_features].values
 
-    _, proba, labels, ref_means = fit_gmm(X, n_clusters, reference_means)
+    _, proba, labels, _ = fit_gmm(X, n_clusters)
 
     df = df_laps_norm.copy()
     for i in range(proba.shape[1]):
         df[f'P_{i}'] = proba[:, i]
-    df['Style_Cluster_ID'] = labels
+    df['Style_Cluster_ID'] = labels.astype(int)
 
     p_arr = np.clip(proba, 1e-9, 1)
     df['Style_Entropy'] = -np.sum(p_arr * np.log(p_arr), axis=1)
 
-    return df, ref_means
+    return df
 
 
 # Plotting
@@ -401,6 +404,81 @@ def plot_probability_distributions(df_laps):
     plt.savefig("results/clustering/v4/proportion_distributions.png", dpi=300)
     plt.close()
 
+
+def plot_cluster_verification(df_season, out_dir="results/clustering/verification"):
+    """
+    Quick check plots for clustering across races and drivers.
+        Per-race timeline grid — 3 sampled drivers, lap time colored by cluster + probability bars
+        Cross-race cluster distribution heatmap — % of laps per cluster per race
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    p_cols = sorted([c for c in df_season.columns if c.startswith('P_') and c[2:].isdigit()])
+    n_k = len(p_cols)
+
+    # per-race timeline grids
+    for location, df_race in df_season.groupby('Location'):
+        drivers = df_race['Driver'].unique()
+        sample = drivers[:3]  # up to 3 drivers
+        fig, axes = plt.subplots(len(sample), 2, figsize=(14, 4 * len(sample)),
+                                 gridspec_kw={'width_ratios': [3, 1]})
+        if len(sample) == 1:
+            axes = [axes]
+
+        for ax_row, drv in zip(axes, sample):
+            ax_t, ax_b = ax_row
+            d = df_race[df_race['Driver'] == drv].sort_values('LapNumber')
+
+            ax_t.plot(d['LapNumber'], d['LapTime_Sec'], color='gray', lw=1, alpha=0.3, zorder=1)
+            for cid in range(n_k):
+                sub = d[d['Style_Cluster_ID'] == cid]
+                ax_t.scatter(sub['LapNumber'], sub['LapTime_Sec'],
+                             color=CLUSTER_COLOURS.get(cid, '#888'), s=50,
+                             edgecolor='black', lw=0.3, zorder=2,
+                             label=CLUSTER_NAMES.get(cid, f'C{cid}'))
+            ax_t.set_ylabel(f"{drv}\nLapTime (s)")
+            ax_t.legend(fontsize=7, loc='upper right')
+            ax_t.grid(True, ls='--', alpha=0.3)
+
+            bottom = np.zeros(len(d))
+            for i, col in enumerate(p_cols):
+                ax_b.bar(d['LapNumber'].values, d[col].values, bottom=bottom,
+                         color=CLUSTER_COLOURS.get(i, '#888'), alpha=0.85)
+                bottom += d[col].fillna(0).values
+            ax_b.set_ylim(0, 1)
+            ax_b.set_ylabel("P(cluster)")
+            ax_b.set_xlabel("Lap")
+
+        fig.suptitle(f"{location} — Cluster verification", fontsize=12)
+        plt.tight_layout()
+        safe_loc = location.replace(' ', '_')
+        plt.savefig(f"{out_dir}/{safe_loc}_timeline.png", dpi=150, bbox_inches='tight')
+        plt.close()
+
+    # cross-race cluster distribution heatmap
+    cluster_pct = (
+        df_season.groupby(['Location', 'Style_Cluster_ID'])
+        .size()
+        .unstack(fill_value=0)
+    )
+    cluster_pct = cluster_pct.div(cluster_pct.sum(axis=1), axis=0) * 100
+
+    fig, ax = plt.subplots(figsize=(max(6, n_k * 2), max(4, len(cluster_pct) * 0.5 + 1)))
+    im = ax.imshow(cluster_pct.values, aspect='auto', cmap='RdYlGn', vmin=0, vmax=100)
+    ax.set_xticks(range(n_k))
+    ax.set_xticklabels([CLUSTER_NAMES.get(i, f'C{i}') for i in range(n_k)], rotation=20, ha='right')
+    ax.set_yticks(range(len(cluster_pct)))
+    ax.set_yticklabels(cluster_pct.index)
+    for i in range(len(cluster_pct)):
+        for j in range(n_k):
+            ax.text(j, i, f"{cluster_pct.values[i, j]:.0f}%", ha='center', va='center', fontsize=8)
+    plt.colorbar(im, ax=ax, label='% of laps')
+    ax.set_title("Cluster distribution per race (%)")
+    plt.tight_layout()
+    plt.savefig(f"{out_dir}/cross_race_heatmap.png", dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Verification plots saved to {out_dir}/")
+
+
 def log(summary_lines, *args, **kwargs):
     """
     Prints to terminal and appends to summary_lines for file saving.
@@ -427,6 +505,29 @@ CLUSTER_FEATURES = [
     'Throttle_On_Dist_Norm',
     'Throttle_Integral_Norm',
 ]
+
+def run_clustering_features(session, laps, all_telemetry=None, n_clusters=N_CLUSTERS):
+    """
+    Full clustering pipeline: corner extraction -> lap aggregation -> normalisation -> GMM.
+    Cluster labels are ordered by aggression score each race independently.
+    """
+    corner_weights = calculate_circuit_weights(session)
+    df_corners = build_corner_database(session, laps, all_telemetry=all_telemetry)
+    if df_corners.empty:
+        return pd.DataFrame()
+
+    df_lap_feats = aggregate_corners_to_laps(df_corners, corner_weights)
+
+    cluster_feature_means = [f'Mean_{f}' for f in CLUSTER_FEATURES]
+    df_lap_norm, z_features = normalize_lap_features(df_lap_feats, cluster_feature_means)
+
+    df_clustered = cluster_laps(df_lap_norm, z_features, n_clusters)
+
+    drop_cols = ['LapTime_Sec'] if 'LapTime_Sec' in df_clustered.columns else []
+    df_clustered = df_clustered.drop(columns=drop_cols)
+
+    return df_clustered
+
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -465,7 +566,7 @@ if __name__ == "__main__":
 
     # Step 4 - fit GMM to cluster features
     log(summary_lines, f"\nFitting GMM with k={N_CLUSTERS} clusters")
-    df_laps_clustered, reference_means = cluster_laps(df_laps_norm, z_features, N_CLUSTERS)
+    df_laps_clustered = cluster_laps(df_laps_norm, z_features, N_CLUSTERS)
 
     p_cols = sorted([c for c in df_laps_clustered.columns if c.startswith('P_') and c[2:].isdigit()])
     log(summary_lines, "\nSample output:")
@@ -493,10 +594,7 @@ if __name__ == "__main__":
     print(f"\nSummary saved to {summary_path}")
 
     # plots
-    plot_lap_clusters_scatter(df_laps_clustered,
-                               'Z_Mean_Apex_Speed_Ratio',
-                               'Z_Mean_Throttle_Integral_Norm',
-                               'VER')
+    plot_lap_clusters_scatter(df_laps_clustered, 'Z_Mean_Apex_Speed_Ratio', 'Z_Mean_Throttle_Integral_Norm', 'VER')
     for drv in df_laps_clustered['Driver'].unique():
         plot_race_timeline(df_laps_clustered, drv)
     plot_probability_distributions(df_laps_clustered)
