@@ -1,31 +1,14 @@
-from scipy.signal import savgol_filter
-from scipy.optimize import linear_sum_assignment
-from scipy.spatial.distance import cdist
-from sklearn.metrics import silhouette_score
-import numpy as np
-import pandas as pd
-from sklearn.mixture import GaussianMixture
-from sklearn.preprocessing import RobustScaler
-import matplotlib.pyplot as plt
-import fastf1
 import os
 import time
-
-FEATURE_COLS = [
-    'Apex_Speed_Ratio',
-    'Brake_Fraction',
-    'Brake_Point_Norm',
-    'Throttle_On_Dist_Norm',
-    'Throttle_Integral_Norm',
-    'Speed_CV',
-]
-
-CLUSTER_FEATURES = [
-    'Apex_Speed_Ratio',
-    'Throttle_On_Dist_Norm',
-    'Throttle_Integral_Norm',
-]
-
+import fastf1
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
+from scipy.spatial.distance import cdist
+from sklearn.mixture import GaussianMixture
+from sklearn.metrics import silhouette_score
+from scipy.optimize import linear_sum_assignment
 
 def add_curvature_to_telemetry(tel):
     """
@@ -54,6 +37,9 @@ def add_curvature_to_telemetry(tel):
 
 
 def extract_corner_features(corner_tel):
+    """
+    Extracts 6 driving-style features from a single corner
+    """
     if len(corner_tel) < 5:
         return None
 
@@ -77,7 +63,7 @@ def extract_corner_features(corner_tel):
 
     apex_speed_ratio = apex_speed / entry_speed
 
-    # braking behaviuor
+    # braking behavior
     brake_fraction = np.sum(brake) / len(brake)
 
     if np.any(brake == 1):
@@ -122,7 +108,6 @@ def build_corner_database(session, laps):
     Loads continuous telemetry per driver
     """
     corners_info = session.get_circuit_info().corners
-    
     corner_zones = {
         f"{c['Number']}{c['Letter']}": (c['Distance'] - 100, c['Distance'] + 100)
         for _, c in corners_info.iterrows()
@@ -138,7 +123,7 @@ def build_corner_database(session, laps):
                 full_tel.add_distance()
             full_tel = add_curvature_to_telemetry(full_tel)
         except Exception as e:
-            print(f"Failed to load full telemetry for {drv}: {e}")
+            print(f"Telemetry load failed for {drv}: {e}")
             continue
 
         for _, lap in drv_laps.iterrows():
@@ -153,7 +138,6 @@ def build_corner_database(session, laps):
                 for corner_id, (start_m, end_m) in corner_zones.items():
                     corner_tel = lap_tel[(lap_tel['Distance'] >= start_m) &
                                     (lap_tel['Distance'] <= end_m)].copy()
-                    
                     metrics = extract_corner_features(corner_tel)
                     if metrics is None:
                         continue
@@ -165,8 +149,7 @@ def build_corner_database(session, laps):
                     all_corners_data.append(metrics)
 
             except Exception as e:
-                print(f"Error on lap {lap['LapNumber']} for {drv}: {e}")
-                continue
+                print(f"Corner extraction error on lap {lap['LapNumber']} for {drv}: {e}")
 
     return pd.DataFrame(all_corners_data)
 
@@ -196,7 +179,6 @@ def aggregate_corners_to_laps(df_corners, corner_weights):
     lap_times = df_corners[['Driver', 'LapNumber', 'LapTime_Sec']].drop_duplicates()
     df_laps   = pd.merge(df_laps, lap_times, on=['Driver', 'LapNumber'])
     return df_laps
-
 
 def normalize_lap_features(df_laps, feature_cols, clip_sigma=3.0):
     """
@@ -252,13 +234,27 @@ def calculate_circuit_weights(session):
         if straight.empty:
             w_time[corner_id] = 0.0
         else:
-            deltas = np.diff(straight['Distance'].values,prepend=straight['Distance'].iloc[0])
+            deltas = np.diff(straight['Distance'].values, prepend=straight['Distance'].iloc[0])
             w_time[corner_id] = np.sum(deltas[straight['Throttle'].astype(float).values >= 99])
 
     w_time = normalize_dict(w_time)
     w_energy = normalize_dict(w_energy)
     return {corner_id: 0.5 * w_time[corner_id] + 0.5 * w_energy[corner_id]
             for corner_id in corner_map if corner_id in w_time and corner_id in w_energy}
+
+
+def silhouette_scoring(X, max_k=4):
+    """
+    Runs silhouette scoring for different k to help validate cluster count choice
+    """
+    print("\nSilhouette scoring:")
+    for k in range(2, max_k + 1):
+        gmm = GaussianMixture(n_components=k, covariance_type='full', random_state=42, n_init=10)
+        labels = gmm.fit_predict(X)
+        if len(np.unique(labels)) < 2:
+            continue
+        sil = silhouette_score(X, labels, sample_size=min(2000, len(X)))
+        print(f" k={k}  silhouette={sil:.4f}")
 
 
 def align_labels(new_means, ref_means):
@@ -272,20 +268,16 @@ def align_labels(new_means, ref_means):
 
 def fit_gmm(X, n_clusters, reference_means=None):
     """
-    Fits GMM to the data, returns aligned probabilities and labels
+    Fits GMM to the normalized data, returns aligned probabilities and labels
     """
-    scaler = RobustScaler()
-    X_scaled = scaler.fit_transform(X)
+    gmm = GaussianMixture(n_components=n_clusters, covariance_type='full', random_state=42, n_init=10)
+    gmm.fit(X)
 
-    gmm = GaussianMixture(n_components=n_clusters, covariance_type='full',
-                          random_state=42, n_init=10)
-    gmm.fit(X_scaled)
-
-    raw_proba  = gmm.predict_proba(X_scaled)
+    raw_proba  = gmm.predict_proba(X)
     raw_labels = np.argmax(raw_proba, axis=1)
 
     if reference_means is None:
-        means = np.array([X_scaled[raw_labels == c].mean(axis=0)
+        means = np.array([X[raw_labels == c].mean(axis=0)
                           for c in range(n_clusters)])
         
         # order clusters by aggression = high entry speed + low throttle on distance
@@ -294,48 +286,25 @@ def fit_gmm(X, n_clusters, reference_means=None):
         label_map = {old: new for new, old in enumerate(order)}
         reference_means = means[order]
     else:
-        means = np.array([X_scaled[raw_labels == c].mean(axis=0)
-                        for c in range(n_clusters)])
+        means = np.array([X[raw_labels == c].mean(axis=0)
+                               for c in range(n_clusters)])
         label_map = align_labels(means, reference_means)
 
     aligned = np.zeros_like(raw_proba)
     for raw_id, aligned_id in label_map.items():
         aligned[:, aligned_id] = raw_proba[:, raw_id]
 
-    return gmm, scaler, aligned, np.argmax(aligned, axis=1), reference_means
-
-
-def pick_n_clusters(X, max_k=4):
-    """
-    Tries GMM with different k and picks the one with best silhouette score
-    """
-    scaler = RobustScaler()
-    Xs = scaler.fit_transform(X)
-
-    best_k, best_sil = 3, -1
-    for k in range(2, max_k + 1):
-        gmm = GaussianMixture(n_components=k, covariance_type='full', random_state=42, n_init=10)
-        labels = gmm.fit_predict(Xs)
-        n_uniq = len(np.unique(labels))
-        if n_uniq < 2:
-            continue
-        sil = silhouette_score(Xs, labels, sample_size=min(2000, len(Xs)))
-        print(f"k={k} silhouette={sil:.4f}")
-        if sil > best_sil:
-            best_sil, best_k = sil, k
-
-    print(f"best k={best_k} (silhouette={best_sil:.4f})")
-    return best_k
+    return gmm, aligned, np.argmax(aligned, axis=1), reference_means
 
 
 def cluster_laps(df_laps_norm, z_features, n_clusters, reference_means=None):
     """
-    Main function to fit GMM and label laps with cluster probabilities and IDs.
+    Main function to fit GMM and label laps with cluster probabilities and IDs
     """
     X = df_laps_norm[z_features].values
 
-    _, _, proba, labels, ref_means = fit_gmm(X, n_clusters, reference_means)
- 
+    _, proba, labels, ref_means = fit_gmm(X, n_clusters, reference_means)
+
     df = df_laps_norm.copy()
     for i in range(proba.shape[1]):
         df[f'P_{i}'] = proba[:, i]
@@ -350,7 +319,7 @@ def cluster_laps(df_laps_norm, z_features, n_clusters, reference_means=None):
 # Plotting
 
 CLUSTER_COLOURS = {0: '#e74c3c', 1: '#3498db', 2: '#2ecc71', 3: '#f39c12'}
-CLUSTER_NAMES   = {0: 'Early Throttle / Exit Push', 1: 'High Entry Speed / Trail Throttle', 2: 'Save / Lift', 3: 'Cluster 3'}
+CLUSTER_NAMES = {0: 'Exit Attack', 1: 'Speed Carry', 2: 'Throttle Save', 3: 'Cluster 3',}
 
 
 def plot_lap_clusters_scatter(df_laps, x_col, y_col, driver_code):
@@ -369,9 +338,7 @@ def plot_lap_clusters_scatter(df_laps, x_col, y_col, driver_code):
     plt.title(f"{driver_code} — Lap Clusters (GMM, k={n_k})")
     plt.legend()
     plt.tight_layout()
-    os.makedirs("results/clustering/v3", exist_ok=True)
-    plt.savefig(f"results/clustering/v3/{driver_code}_style_clusters_gmm.png",
-                dpi=300, bbox_inches='tight')
+    plt.savefig(f"results/clustering/v4/{driver_code}_style_clusters_gmm.png", dpi=300, bbox_inches='tight')
     plt.close()
 
 
@@ -380,14 +347,14 @@ def plot_race_timeline(df_laps, driver_code="VER"):
     Plots lap time timeline with points colored by dominant style cluster,
     and a stacked bar of style probabilities below
     """
-    drv  = df_laps[df_laps['Driver'] == driver_code].sort_values('LapNumber')
+    drv = df_laps[df_laps['Driver'] == driver_code].sort_values('LapNumber')
     p_cols = sorted([c for c in df_laps.columns
                      if c.startswith('P_') and c[2:].isdigit()])
-    n_k  = len(p_cols)
+    n_k = len(p_cols)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 9), gridspec_kw={'height_ratios': [3, 1]}, sharex=True)
 
-    ax1.plot(drv['LapNumber'], drv['LapTime_Sec'],color='gray', lw=1, alpha=0.3, zorder=1)
+    ax1.plot(drv['LapNumber'], drv['LapTime_Sec'], color='gray', lw=1, alpha=0.3, zorder=1)
     for cid in range(n_k):
         sub = drv[drv['Style_Cluster_ID'] == cid]
         ax1.scatter(sub['LapNumber'], sub['LapTime_Sec'],
@@ -410,7 +377,7 @@ def plot_race_timeline(df_laps, driver_code="VER"):
     ax2.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8)
 
     plt.tight_layout()
-    plt.savefig(f"results/clustering/v3/{driver_code}_race_pace_timeline_gmm.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"results/clustering/v4/{driver_code}_race_pace_timeline_gmm.png", dpi=300, bbox_inches='tight')
     plt.close()
 
 
@@ -431,60 +398,105 @@ def plot_probability_distributions(df_laps):
         ax.set_ylabel("Count")
     plt.suptitle(f"Lap-Level Style Probabilities (k={len(p_cols)})")
     plt.tight_layout()
-    plt.savefig("results/clustering/v3/proportion_distributions.png", dpi=300)
+    plt.savefig("results/clustering/v4/proportion_distributions.png", dpi=300)
     plt.close()
 
+def log(summary_lines, *args, **kwargs):
+    """
+    Prints to terminal and appends to summary_lines for file saving.
+    """
+    text = " ".join(str(a) for a in args)
+    print(text, **kwargs)
+    summary_lines.append(text)
+
+
+
+N_CLUSTERS = 3
+
+FEATURE_COLS = [
+    'Apex_Speed_Ratio',
+    'Brake_Fraction',
+    'Brake_Point_Norm',
+    'Throttle_On_Dist_Norm',
+    'Throttle_Integral_Norm',
+    'Speed_CV',
+]
+
+CLUSTER_FEATURES = [
+    'Apex_Speed_Ratio',
+    'Throttle_On_Dist_Norm',
+    'Throttle_Integral_Norm',
+]
 
 if __name__ == "__main__":
     start_time = time.time()
     os.makedirs("cache", exist_ok=True)
+    os.makedirs("results/clustering/v4", exist_ok=True)
     fastf1.Cache.enable_cache('cache')
 
     session = fastf1.get_session(2023, 'Silverstone', 'R')
     session.load(telemetry=True, weather=False, messages=False)
     all_laps = session.laps.pick_quicklaps().pick_wo_box().reset_index(drop=True)
 
-    print("Extracting corner features")
+    summary_path = "results/clustering/v4/summary.txt"
+    summary_lines = []
+
+    log(summary_lines, f"Session: {session.event['EventName']} {session.event.year}")
+
+    # Step 1 — extract corner-level features from telemetry, per driver and lap
+    log(summary_lines, "\nExtracting corner features")
     df_corners = build_corner_database(session, all_laps)
-    print(f"{len(df_corners)} corner observations")
+    log(summary_lines, f"  {len(df_corners)} corners")
 
-
-    print("Aggregating corners to laps")
+    # Step 2 — aggregate corners into laps
+    log(summary_lines, "Aggregating corners to laps")
     corner_weights = calculate_circuit_weights(session)
     df_laps = aggregate_corners_to_laps(df_corners, corner_weights)
-    print(f"{len(df_laps)} laps")
+    log(summary_lines, f"  {len(df_laps)} laps, {len(df_laps['Driver'].unique())} drivers")
 
+    # Step 3 — normalize features for clustering
     cluster_feature_means = [f'Mean_{f}' for f in CLUSTER_FEATURES]
     df_laps_norm, z_features = normalize_lap_features(df_laps, cluster_feature_means)
+    log(summary_lines, "\nFeature ranges after normalisation:")
+    log(summary_lines, df_laps_norm[z_features].describe().loc[['min', 'max', 'std']].round(2).to_string())
 
-    print("\nFeature ranges after normalisation:")
-    print(df_laps_norm[z_features].describe().loc[['min', 'max', 'std']].round(2))
+    # verify cluster amount
+    silhouette_scoring(df_laps_norm[z_features].values, max_k=4)
 
-    print("\nSelecting number of clusters")
-    X = df_laps_norm[z_features].values
-    n_clusters = pick_n_clusters(X, max_k=4)
-    n_clusters = 3 # hardcoded based on domain knowledge
+    # Step 4 - fit GMM to cluster features
+    log(summary_lines, f"\nFitting GMM with k={N_CLUSTERS} clusters")
+    df_laps_clustered, reference_means = cluster_laps(df_laps_norm, z_features, N_CLUSTERS)
 
-    # main clustering
-    print(f"\nFitting GMM with k={n_clusters}")
-    df_laps_clustered, reference_means = cluster_laps(df_laps_norm, z_features, n_clusters)
-
-    # results
     p_cols = sorted([c for c in df_laps_clustered.columns if c.startswith('P_') and c[2:].isdigit()])
-    print("\nSample output:")
-    print(df_laps_clustered[['Driver', 'LapNumber'] + p_cols + ['Style_Entropy', 'Style_Cluster_ID']].head(10))
+    log(summary_lines, "\nSample output:")
+    cols = ['Driver', 'LapNumber'] + p_cols + ['Style_Entropy', 'Style_Cluster_ID']
+    log(summary_lines, df_laps_clustered[df_laps_clustered['Driver'] == 'VER'][cols].head(10).to_string())
 
-    print("\nCluster distribution:")
-    print(df_laps_clustered['Style_Cluster_ID'].value_counts())
+    log(summary_lines, "\nCluster distribution:")
+    log(summary_lines, df_laps_clustered['Style_Cluster_ID'].value_counts().to_string())
 
-    print("\nCluster centroids (mean of normalised features):")
     centroid_cols = z_features + ['Style_Cluster_ID']
-    print(df_laps_clustered[centroid_cols].groupby('Style_Cluster_ID').mean().round(3))
+    log(summary_lines, "\nCluster centroids (Z-scored features):")
+    log(summary_lines, df_laps_clustered[centroid_cols].groupby('Style_Cluster_ID').mean().round(3).to_string())
 
-    os.makedirs("results/clustering/v3", exist_ok=True)
-    plot_lap_clusters_scatter(df_laps_clustered,'Z_Mean_Apex_Speed_Ratio', 'Z_Mean_Throttle_Integral_Norm', 'VER')
+    raw_mean_cols = [f'Mean_{f}' for f in FEATURE_COLS]
+    log(summary_lines, "\nCluster centroids (raw feature means):")
+    log(summary_lines, df_laps_clustered[raw_mean_cols + ['Style_Cluster_ID']].groupby('Style_Cluster_ID').mean().round(4).to_string())
+
+    csv_path = "results/clustering/v4/lap_clusters.csv"
+    df_laps_clustered.to_csv(csv_path, index=False)
+    log(summary_lines, f"\nLap-level results saved to {csv_path}")
+    log(summary_lines, f"\nClustering completed in {time.time() - start_time:.2f} seconds")
+
+    with open(summary_path, 'w') as f:
+        f.write('\n'.join(summary_lines))
+    print(f"\nSummary saved to {summary_path}")
+
+    # plots
+    plot_lap_clusters_scatter(df_laps_clustered,
+                               'Z_Mean_Apex_Speed_Ratio',
+                               'Z_Mean_Throttle_Integral_Norm',
+                               'VER')
     for drv in df_laps_clustered['Driver'].unique():
         plot_race_timeline(df_laps_clustered, drv)
     plot_probability_distributions(df_laps_clustered)
-
-    print(f"\nClustering completed in {time.time() - start_time:.2f} seconds")
