@@ -67,14 +67,19 @@ def calculate_energy(telemetry):
         else:
             x_smooth, y_smooth = x, y
 
-        dx = np.gradient(x_smooth)
-        dy = np.gradient(y_smooth)
-        ddx = np.gradient(dx)
-        ddy = np.gradient(dy)
+        x_m = x_smooth / 10.0
+        y_m = y_smooth / 10.0
+
+        dist = np.cumsum(np.asarray(v) * np.asarray(dt)) + np.arange(len(x_m)) * 1e-9
+
+        dx = np.gradient(x_m, dist)
+        dy = np.gradient(y_m, dist)
+        ddx = np.gradient(dx, dist)
+        ddy = np.gradient(dy, dist)
 
         curvature = (dx * ddy - dy * ddx) / (np.power(dx**2 + dy**2, 1.5) + 1e-6)
         a_lat = (v**2) * np.abs(curvature)
-        a_lat = np.clip(a_lat, 0, 60.0) 
+        a_lat = np.clip(a_lat, 0, 60.0)
     except:
         a_lat = np.zeros(len(telemetry))
 
