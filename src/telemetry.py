@@ -22,46 +22,28 @@ def add_derived_features(df):
     df['Pressure_Delta'] = df['Min_Pressure_Front_PSI'] - df['Min_Pressure_Rear_PSI']
     return df
 
-def calculate_dirty_air(target_driver, all_telemetry):
+def calculate_dirty_air(lap_tel, dirty_air_threshold=2.0):
     """
-    Calculate the average distance to the closest car ahead for each telemetry point of the target driver
+    Calculate dirty air metrics for a single lap using FastF1's per-lap add_driver_ahead()
     """
-    target_tel = all_telemetry[target_driver]
-    ref_time = target_tel['SessionTime'].dt.total_seconds().values
-    ref_dist = target_tel['Distance'].values 
+    try:
+        lap_tel_with_ahead = lap_tel.add_driver_ahead()
+        dist_ahead = lap_tel_with_ahead['DistanceToDriverAhead']
 
-    rival_distances = pd.DataFrame(index=ref_time)
-    
-    for drv, d_tel in all_telemetry.items():
-        if drv == target_driver: 
-            continue
-        try:
-            d_time = d_tel['SessionTime'].dt.total_seconds().values
-            d_dist = d_tel['Distance'].values
+        my_speed_ms = lap_tel_with_ahead['Speed'] / 3.6
+        my_speed_ms = my_speed_ms.replace(0, 10.0)
 
-            _, unique_indices = np.unique(d_time, return_index=True)
-            d_time = d_time[unique_indices]
-            d_dist = d_dist[unique_indices]
-            
-            f_dist = interp1d(d_time, d_dist, kind='linear', bounds_error=False, fill_value=np.nan)
-            rival_distances[drv] = f_dist(ref_time)
-        except Exception:
-            continue
+        time_gaps = (dist_ahead / my_speed_ms).clip(upper=5.0)
+        valid = time_gaps.dropna()
 
-    current_dist_series = pd.Series(ref_dist, index=ref_time)
-    diff_matrix = rival_distances.sub(current_dist_series, axis=0)
-    
-    mask_ahead = (diff_matrix > 0) & (diff_matrix < 250)
-    closest_dist_m = diff_matrix.where(mask_ahead).min(axis=1)
-    
-    my_speed_ms = target_tel['Speed'] / 3.6
-    my_speed_ms = my_speed_ms.replace(0, 10.0)
-    
-    time_gaps = closest_dist_m.values / my_speed_ms.values
-    time_gaps = pd.Series(time_gaps).fillna(5.0)
-    time_gaps[time_gaps > 5.0] = 5.0
-    
-    return time_gaps.values
+        if valid.empty:
+            return 5.0, 0.0
+
+        mean_gap = valid.mean()
+        dirty_air_fraction = (valid < dirty_air_threshold).sum() / len(valid)
+        return mean_gap, dirty_air_fraction
+    except Exception:
+        return 5.0, 0.0
 
 def calculate_energy(telemetry):
     """
@@ -180,6 +162,7 @@ def generate_telemetry_features_dataset(session, df_laps):
 
     df_laps['E_lap'] = np.nan
     df_laps['Gap_To_Car_Ahead'] = 5.0
+    df_laps['Dirty_Air_Fraction'] = 0.0
     df_laps['LatOffset_Mean'] = np.nan
     df_laps['LatOffset_Std'] = np.nan
     
@@ -193,41 +176,38 @@ def generate_telemetry_features_dataset(session, df_laps):
         try:
             d_laps = session.laps.pick_drivers(drv)
             if len(d_laps) > 0:
-                tel  = d_laps.get_telemetry()
+                tel = d_laps.get_telemetry()
                 if len(tel) >= 10:
-                    if 'Distance' not in tel.columns:
-                        tel.add_distance()
+                    tel['Energy_Tick'] = calculate_energy(tel)
                     all_telemetry[drv] = tel
         except Exception:
             pass
-
-    # apply dirty air and tyre energy calculations to telemetry
-    for drv, tel in all_telemetry.items():
-        tel['Gap_To_Car_Ahead'] = calculate_dirty_air(drv, all_telemetry)
-        tel['Energy_Tick'] = calculate_energy(tel)
-        all_telemetry[drv] = tel
 
     # map telemetry back to laps
     for idx, row in df_laps.iterrows():
         driver = row['Driver']
         if driver not in all_telemetry:
             continue
-            
+
         try:
             lap_obj = session.laps.pick_drivers(driver).pick_laps(row['LapNumber']).iloc[0]
             lap_start = lap_obj['LapStartTime']
             lap_end = lap_obj['Time']
-            
+
             drv_tel = all_telemetry[driver]
-            
+
             mask = (drv_tel['SessionTime'] >= lap_start) & (drv_tel['SessionTime'] <= lap_end)
             lap_tel = drv_tel.loc[mask].copy()
-            
+
             if not lap_tel.empty and len(lap_tel) >= 10:
                 df_laps.loc[idx, 'E_lap'] = lap_tel['Energy_Tick'].sum()
-                df_laps.loc[idx, 'Gap_To_Car_Ahead'] = lap_tel['Gap_To_Car_Ahead'].mean()
 
-                # start lateral offset calculation
+                # calculate dirty air metrics
+                mean_gap, dirty_frac = calculate_dirty_air(lap_tel, dirty_air_threshold=2.0)
+                df_laps.loc[idx, 'Gap_To_Car_Ahead'] = mean_gap
+                df_laps.loc[idx, 'Dirty_Air_Fraction'] = dirty_frac
+
+                # calculate lateral offset metrics
                 lap_dist = lap_tel['Distance'] - lap_tel['Distance'].min()
                 lap_tel['NormDist'] = lap_dist / lap_dist.max()				
                 lap_tel = lap_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)

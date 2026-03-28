@@ -187,7 +187,7 @@ def clean_laps(df):
        'Cumulative_Field_Dist_KM', 'Track_Evolution_Physics.1',
        'Compound_Hard_Int', 'Compound_Medium_Int', 'Compound_Soft_Int',
        'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int', 'E_lap',
-       'Gap_To_Car_Ahead', 'P_surface', 'M_aero', 'Lap_Damage',
+       'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'P_surface', 'M_aero', 'Lap_Damage',
        'Accumulated_Tyre_Wear', 'Micro_Stint_ID', 'Prev_LapTime',
        'Lag_2', 'Rolling_Avg_3',
        'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',
@@ -243,6 +243,7 @@ if __name__ == "__main__":
 
     df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
     locations = df_pirelli['Location'].unique()
+    locations = ['Silverstone']
 
     YEAR = 2023
     full_dataset = []
