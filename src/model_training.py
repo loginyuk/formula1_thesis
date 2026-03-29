@@ -47,8 +47,10 @@ def feature_importance_walk_forward_delta(df, features):
     plt.ylabel("Features")
     
     plt.tight_layout()
-    # plt.show()
     plt.savefig('results/feature_importance_season.png', dpi=300)
+
+    # save results to csv
+    importance_df.to_csv('results/feature_importance_season.csv', index=False)
     
     return importance_df
 
@@ -236,7 +238,7 @@ def run_season_walk_forward(df, features, model, target='LapTime_Sec', min_train
 
 if __name__ == "__main__":
     start = time.time()
-    df_with_telemetry = pd.read_csv('data/dataset_with_telemetry_2023.csv')
+    df_with_telemetry = pd.read_csv('data/dataset_2023.csv')
     features = [
         'LapNumber', 'Stint',
         'TyreLife', 'AirTemp', 'Humidity', 'Pressure',
@@ -251,7 +253,15 @@ if __name__ == "__main__":
         'Compound_Int', 'E_lap', 'Gap_To_Car_Ahead', 'Grip_Aero_Balance',
         'Total_Min_Pressure', 'Pressure_Delta', 'LatOffset_Mean',
         'LatOffset_Std', 'Lap_Gap', 'Prev_LapTime', 'Lag_2', 'Rolling_Avg_3',
-        'Prev_Delta', 'Driver_Encoded', 'Location_Encoded', 'Team_Encoded'
+        'Prev_Delta', 'Driver_Encoded', 'Location_Encoded', 'Team_Encoded',
+        'Dirty_Air_Fraction', 
+        'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+        'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+        'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+        'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+        'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+        'Mean_Speed_CV', 'Std_Speed_CV',
+        'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy'
     ]
     model = XGBRegressor(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42)
     

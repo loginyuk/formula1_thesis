@@ -243,7 +243,6 @@ if __name__ == "__main__":
 
     df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
     locations = df_pirelli['Location'].unique()
-    locations = ['Silverstone']
 
     YEAR = 2023
     full_dataset = []
@@ -273,7 +272,6 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Could not process {location}. Error: {e}")
             continue
-
     
     if full_dataset:
         df_final_season = pd.concat(full_dataset, ignore_index=True)
