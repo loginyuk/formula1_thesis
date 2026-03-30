@@ -127,9 +127,12 @@ def add_lag_features(df_clean):
     df_ts['Target_Delta'] = df_ts['LapTime_Sec'] - df_ts['Prev_LapTime']
     df_ts['Prev_Delta'] = df_ts['Prev_LapTime'] - df_ts['Lag_2']
 
-    
     df_ts = df_ts.dropna(subset=['Prev_LapTime', 'Rolling_Avg_3']).reset_index(drop=True)
     df_ts = df_ts.drop(columns=['Micro_Stint_ID'])
+
+    df_ts['Stint_Progress'] = df_ts.groupby(['Driver', 'Stint', 'Location'])['TyreLife'].transform(
+        lambda x: (x - x.min()) / (x.max() - x.min() + 1e-9)
+    )
     
     print(f"Final Laps with History: {len(df_ts)}")
     return df_ts
@@ -148,9 +151,6 @@ def remove_wet_laps(df):
         first_rain_time = rainy_laps['Time'].min()
         df_dry = df_dry[df_dry['Time'] < first_rain_time]
         print(f"Rain detected at {first_rain_time}. Dropped all subsequent laps.")
-    
-    # filter wet compounds
-    # final_dry_laps = df_dry[~df_dry['Compound'].isin(['INTERMEDIATE', 'WET'])].copy()
     
     print(f"Total Laps Input: {len(df)}")
     print(f"Valid Dry Laps Retained: {len(df_dry)}\n")
@@ -177,7 +177,7 @@ def clean_laps(df):
 
     # clean up columns
     cols_to_keep = ['Time', 'Driver', 'LapTime', 'LapNumber', 'Stint', 'Compound',
-       'TyreLife', 'Team', 'Location', 'AirTemp', 'Humidity', 'Pressure',
+       'TyreLife', 'Team', 'Location', 'Position', 'AirTemp', 'Humidity', 'Pressure',
        'Rainfall', 'TrackTemp', 'WindDirection', 'WindSpeed', 'LapTime_Sec',
        'FuelLoad', 'Track_Evolution_Physics', 'Traction_1_5',
        'Asphalt_Grip_1_5', 'Asphalt_Abrasion_1_5', 'Track_Evolution_1_5',
@@ -186,8 +186,11 @@ def clean_laps(df):
        'Compound_Medium', 'Compound_Soft', 'Circuit_Length_KM', 'Total_Laps',
        'Cumulative_Field_Dist_KM', 'Track_Evolution_Physics.1',
        'Compound_Hard_Int', 'Compound_Medium_Int', 'Compound_Soft_Int',
-       'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int', 'E_lap',
-       'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'P_surface', 'M_aero', 'Lap_Damage',
+       'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int',
+       'Tyre_Compound_Interaction', 'E_lap',
+       'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'DRS_Fraction',
+       'Tyre_Grip_Index', 'Aero_Loss',
+       'P_surface', 'M_aero', 'Lap_Damage',
        'Accumulated_Tyre_Wear', 'Micro_Stint_ID', 'Prev_LapTime',
        'Lag_2', 'Rolling_Avg_3',
        'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',

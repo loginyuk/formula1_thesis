@@ -7,12 +7,16 @@ errors.txt
 clustering_lap_*
 cluster_visualizations.py
 feature_analysis.py
+correlation_matrix.py
 documentation
 
 test.py
 results/cluster_visualizations
 results/clustering
 results/feature_analysis
+results/old*
+results/correlation
+dataset_2023_2_clusters.csv
 
 results/results_errors_season_old.png
 results/season_degradation_VER_old.png
