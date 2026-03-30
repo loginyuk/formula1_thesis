@@ -129,10 +129,6 @@ def add_lag_features(df_clean):
 
     df_ts = df_ts.dropna(subset=['Prev_LapTime', 'Rolling_Avg_3']).reset_index(drop=True)
     df_ts = df_ts.drop(columns=['Micro_Stint_ID'])
-
-    df_ts['Stint_Progress'] = df_ts.groupby(['Driver', 'Stint', 'Location'])['TyreLife'].transform(
-        lambda x: (x - x.min()) / (x.max() - x.min() + 1e-9)
-    )
     
     print(f"Final Laps with History: {len(df_ts)}")
     return df_ts

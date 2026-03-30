@@ -250,6 +250,26 @@ if __name__ == "__main__":
 
     df_with_telemetry = pd.read_csv('data/dataset_2023.csv')
 
+    # shift telemetry features by 1 lap (to remove data leakage and make a forecasting model)
+    telemetry_features_to_shift = [
+        'E_lap', 'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'DRS_Fraction',
+        'LatOffset_Mean', 'LatOffset_Std', 'Aero_Loss', 'Lap_Damage',
+        'Accumulated_Tyre_Wear', 'Tyre_Grip_Index',
+        'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+        'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+        'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+        'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+        'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+        'Mean_Speed_CV', 'Std_Speed_CV',
+        'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
+    ]
+    df_with_telemetry = df_with_telemetry.sort_values(by=['Location', 'Driver', 'LapNumber'])
+    to_shift = [f for f in telemetry_features_to_shift if f in df_with_telemetry.columns]
+    for feat in to_shift:
+        df_with_telemetry[feat] = df_with_telemetry.groupby(['Location', 'Driver', 'Stint'])[feat].shift(1)
+    df_with_telemetry = df_with_telemetry.dropna(subset=to_shift).reset_index(drop=True)
+    print(f"Shifted {len(to_shift)} telemetry features by 1 lap. Rows remaining: {len(df_with_telemetry)}")
+
     features = [
         'LapNumber', 'Stint',
         'TyreLife', 'Tyre_Compound_Interaction',
