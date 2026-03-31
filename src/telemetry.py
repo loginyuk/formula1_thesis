@@ -9,10 +9,9 @@ def add_derived_features(df):
     """"
     Add derived features from Pirelli press data to the laps dataframe
     """
-    compound_map = {'C0': 0, 'C1': 1, 'C2': 2, 'C3': 3, 'C4': 4, 'C5': 5}
-    df['Compound_Hard_Int'] = df['Compound_Hard'].map(compound_map)
-    df['Compound_Medium_Int'] = df['Compound_Medium'].map(compound_map)
-    df['Compound_Soft_Int'] = df['Compound_Soft'].map(compound_map)
+    df['Compound_Hard_Int'] = df['Compound_Hard_Hardness']
+    df['Compound_Medium_Int'] = df['Compound_Medium_Hardness']
+    df['Compound_Soft_Int'] = df['Compound_Soft_Hardness']
 
     df['Wear_Severity_Index'] = df['Asphalt_Abrasion_1_5'] * df['Tyre_Stress_1_5']
     df['Track_Flow_Type'] = df['Lateral_1_5'] / (df['Traction_1_5'] + df['Braking_1_5'] + 1)

@@ -181,6 +181,7 @@ def clean_laps(df):
        'Min_Pressure_Front_PSI', 'Min_Pressure_Rear_PSI', 'Compound_Hard',
        'Compound_Medium', 'Compound_Soft', 'Circuit_Length_KM', 'Total_Laps',
        'Cumulative_Field_Dist_KM', 'Track_Evolution_Physics.1',
+       'Compound_Hard_Hardness', 'Compound_Medium_Hardness', 'Compound_Soft_Hardness',
        'Compound_Hard_Int', 'Compound_Medium_Int', 'Compound_Soft_Int',
        'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int',
        'Tyre_Compound_Interaction', 'E_lap',
@@ -240,10 +241,11 @@ if __name__ == "__main__":
     os.makedirs("cache", exist_ok=True)
     fastf1.Cache.enable_cache('cache')
 
-    df_pirelli = get_pirelli_press_data('data/track_parameters_2023.csv')
-    locations = df_pirelli['Location'].unique()
+    df_pirelli_all = get_pirelli_press_data('data/track_parameters.csv')
 
     YEAR = 2023
+    df_pirelli = df_pirelli_all[df_pirelli_all['Year'] == YEAR].copy()
+    locations = df_pirelli['Location'].unique()
     full_dataset = []
 
     for location in locations:
