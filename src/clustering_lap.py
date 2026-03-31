@@ -102,17 +102,25 @@ def extract_corner_features(corner_tel):
     }
 
 
-def build_corner_database(session, laps, all_telemetry=None):
+def build_corner_zones(session):
+    """
+    Builds corner zones dict from session circuit info
+    """
+    corners_info = session.get_circuit_info().corners
+    return {
+        f"{c['Number']}{c['Letter']}": (c['Distance'] - 100, c['Distance'] + 100)
+        for _, c in corners_info.iterrows()
+    }
+
+
+def build_corner_database(session, laps, all_telemetry=None, corner_zones=None):
     """
     Builds a corner-level database of driving style metrics.
     If all_telemetry dict is provided, uses it directly.
     Otherwise loads telemetry per driver from the session.
     """
-    corners_info = session.get_circuit_info().corners
-    corner_zones = {
-        f"{c['Number']}{c['Letter']}": (c['Distance'] - 100, c['Distance'] + 100)
-        for _, c in corners_info.iterrows()
-    }
+    if corner_zones is None:
+        corner_zones = build_corner_zones(session)
 
     all_corners_data = []
     for drv in laps['Driver'].unique():
@@ -211,21 +219,19 @@ def normalize_dict(d):
     return {k: (v - lo) / (hi - lo) for k, v in d.items()}
 
 
-def calculate_circuit_weights(session):
+def calculate_circuit_weights(session, corner_zones=None):
     """
     Calculates corner weights based on their contribution to lap time and energy
     """
+    if corner_zones is None:
+        corner_zones = build_corner_zones(session)
+
     lap = session.laps.pick_quicklaps().pick_fastest()
     lap_tel = add_curvature_to_telemetry(lap.get_telemetry())
-    corners = session.get_circuit_info().corners
-    corner_map = {
-        f"{c['Number']}{c['Letter']}": {'start': c['Distance'] - 100, 'end': c['Distance'] + 100}
-        for _, c in corners.iterrows()
-    }
 
     w_time, w_energy = {}, {}
-    for corner_id, bounds in corner_map.items():
-        c_tel = lap_tel[(lap_tel['Distance'] >= bounds['start']) & (lap_tel['Distance'] <= bounds['end'])]
+    for corner_id, (start_m, end_m) in corner_zones.items():
+        c_tel = lap_tel[(lap_tel['Distance'] >= start_m) & (lap_tel['Distance'] <= end_m)]
         if c_tel.empty:
             continue
 
@@ -233,7 +239,7 @@ def calculate_circuit_weights(session):
         lateral_g = np.abs(c_tel['Curvature'].values) * speed_ms ** 2
         w_energy[corner_id] = np.sum(lateral_g * speed_ms)
 
-        after = lap_tel[lap_tel['Distance'] > bounds['end']]
+        after = lap_tel[lap_tel['Distance'] > end_m]
         braking = after[after['Brake'] == 1]
         next_brake = braking.iloc[0]['Distance'] if not braking.empty else lap_tel['Distance'].max()
         straight = after[after['Distance'] < next_brake]
@@ -247,7 +253,7 @@ def calculate_circuit_weights(session):
     w_time = normalize_dict(w_time)
     w_energy = normalize_dict(w_energy)
     return {corner_id: 0.5 * w_time[corner_id] + 0.5 * w_energy[corner_id]
-            for corner_id in corner_map if corner_id in w_time and corner_id in w_energy}
+            for corner_id in corner_zones if corner_id in w_time and corner_id in w_energy}
 
 
 def silhouette_scoring(X, max_k=4):
@@ -511,8 +517,9 @@ def run_clustering_features(session, laps, all_telemetry=None, n_clusters=N_CLUS
     Full clustering pipeline: corner extraction -> lap aggregation -> normalisation -> GMM.
     Cluster labels are ordered by aggression score each race independently.
     """
-    corner_weights = calculate_circuit_weights(session)
-    df_corners = build_corner_database(session, laps, all_telemetry=all_telemetry)
+    corner_zones = build_corner_zones(session)
+    corner_weights = calculate_circuit_weights(session, corner_zones=corner_zones)
+    df_corners = build_corner_database(session, laps, all_telemetry=all_telemetry, corner_zones=corner_zones)
     if df_corners.empty:
         return pd.DataFrame()
 
@@ -544,14 +551,16 @@ if __name__ == "__main__":
 
     log(summary_lines, f"Session: {session.event['EventName']} {session.event.year}")
 
+    corner_zones = build_corner_zones(session)
+
     # Step 1 — extract corner-level features from telemetry, per driver and lap
     log(summary_lines, "\nExtracting corner features")
-    df_corners = build_corner_database(session, all_laps)
+    df_corners = build_corner_database(session, all_laps, corner_zones=corner_zones)
     log(summary_lines, f"  {len(df_corners)} corners")
 
     # Step 2 — aggregate corners into laps
     log(summary_lines, "Aggregating corners to laps")
-    corner_weights = calculate_circuit_weights(session)
+    corner_weights = calculate_circuit_weights(session, corner_zones=corner_zones)
     df_laps = aggregate_corners_to_laps(df_corners, corner_weights)
     log(summary_lines, f"  {len(df_laps)} laps, {len(df_laps['Driver'].unique())} drivers")
 
