@@ -16,7 +16,8 @@ results/clustering
 results/feature_analysis
 results/old*
 results/correlation
-dataset_2023_2_clusters.csv
+results/all_years
+logs/with_errors
 
 results/results_errors_season_old.png
 results/season_degradation_VER_old.png

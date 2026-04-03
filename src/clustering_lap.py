@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 import fastf1
 import numpy as np
@@ -9,6 +10,8 @@ from scipy.spatial.distance import cdist
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
 from scipy.optimize import linear_sum_assignment
+
+logger = logging.getLogger('clustering')
 
 def add_curvature_to_telemetry(tel):
     """
@@ -22,16 +25,30 @@ def add_curvature_to_telemetry(tel):
     x = tel['X'].ffill().bfill().values
     y = tel['Y'].ffill().bfill().values
 
-    x_smooth = savgol_filter(x, window_length=15, polyorder=3)
-    y_smooth = savgol_filter(y, window_length=15, polyorder=3)
+    if len(x) < 5:
+        tel['Curvature'] = 0.0
+        return tel
+
+    # window length should be odd and less than data length
+    wl = min(15, len(x))
+    if wl % 2 == 0:
+        wl -= 1
+    wl = max(wl, 5)
+
+    x_smooth = savgol_filter(x, window_length=wl, polyorder=min(3, wl - 1))
+    y_smooth = savgol_filter(y, window_length=wl, polyorder=min(3, wl - 1))
 
     dist = tel['Distance'].values
     dx, dy = np.gradient(x_smooth, dist), np.gradient(y_smooth, dist)
     ddx, ddy = np.gradient(dx, dist), np.gradient(dy, dist)
 
-    numerator = (dx * ddy) - (dy * ddx)
-    denominator = np.power(dx**2 + dy**2, 1.5) + 1e-6
-    tel['Curvature'] = np.abs(numerator / denominator)
+    with np.errstate(over='ignore', invalid='ignore'):
+        numerator = (dx * ddy) - (dy * ddx)
+        denominator = np.power(dx**2 + dy**2, 1.5) + 1e-6
+        curvature = np.abs(numerator / denominator)
+
+    curvature = np.nan_to_num(curvature, nan=0.0, posinf=0.0, neginf=0.0)
+    tel['Curvature'] = curvature
     tel.loc[tel['Speed'] < 30, 'Curvature'] = 0.0
     return tel
 
@@ -102,11 +119,13 @@ def extract_corner_features(corner_tel):
     }
 
 
-def build_corner_zones(session):
+def build_corner_zones(session=None, circuit_info=None):
     """
-    Builds corner zones dict from session circuit info
+    Builds corner zones dict from session circuit info.
     """
-    corners_info = session.get_circuit_info().corners
+    if circuit_info is None:
+        circuit_info = session.get_circuit_info()
+    corners_info = circuit_info.corners
     return {
         f"{c['Number']}{c['Letter']}": (c['Distance'] - 100, c['Distance'] + 100)
         for _, c in corners_info.iterrows()
@@ -138,7 +157,7 @@ def build_corner_database(session, laps, all_telemetry=None, corner_zones=None):
                     full_tel.add_distance()
             full_tel = add_curvature_to_telemetry(full_tel)
         except Exception as e:
-            print(f"Telemetry load failed for {drv}: {e}")
+            logger.warning(f"Telemetry load failed for {drv}: {e}")
             continue
 
         for _, lap in drv_laps.iterrows():
@@ -164,8 +183,7 @@ def build_corner_database(session, laps, all_telemetry=None, corner_zones=None):
                     all_corners_data.append(metrics)
 
             except Exception as e:
-                print(f"Corner extraction error on lap {lap['LapNumber']} for {drv}: {e}")
-
+                logger.warning(f"Corner extraction error on lap {lap['LapNumber']} for {drv}: {e}")
     return pd.DataFrame(all_corners_data)
 
 
@@ -219,7 +237,7 @@ def normalize_dict(d):
     return {k: (v - lo) / (hi - lo) for k, v in d.items()}
 
 
-def calculate_circuit_weights(session, corner_zones=None):
+def calculate_circuit_weights(session, corner_zones=None, all_telemetry=None):
     """
     Calculates corner weights based on their contribution to lap time and energy
     """
@@ -227,7 +245,13 @@ def calculate_circuit_weights(session, corner_zones=None):
         corner_zones = build_corner_zones(session)
 
     lap = session.laps.pick_quicklaps().pick_fastest()
-    lap_tel = add_curvature_to_telemetry(lap.get_telemetry())
+
+    drv = lap['DriverNumber'] if 'DriverNumber' in lap.index else None
+    drv_abbr = lap['Driver'] if 'Driver' in lap.index else None
+    if all_telemetry and drv_abbr in all_telemetry:
+        lap_tel = add_curvature_to_telemetry(all_telemetry[drv_abbr].copy())
+    else:
+        lap_tel = add_curvature_to_telemetry(lap.get_telemetry())
 
     w_time, w_energy = {}, {}
     for corner_id, (start_m, end_m) in corner_zones.items():
@@ -421,10 +445,22 @@ def plot_cluster_verification(df_season, out_dir="results/clustering/verificatio
     p_cols = sorted([c for c in df_season.columns if c.startswith('P_') and c[2:].isdigit()])
     n_k = len(p_cols)
 
+    has_year = 'Year' in df_season.columns
+    group_keys = ['Year', 'Location'] if has_year else ['Location']
+
     # per-race timeline grids
-    for location, df_race in df_season.groupby('Location'):
+    for group_vals, df_race in df_season.groupby(group_keys):
+        if has_year:
+            year, location = group_vals
+            race_label = f"{year} {location}"
+            safe_name = f"{year}_{location.replace(' ', '_')}"
+        else:
+            location = group_vals
+            race_label = location
+            safe_name = location.replace(' ', '_')
+
         drivers = df_race['Driver'].unique()
-        sample = drivers[:3]  # up to 3 drivers
+        sample = drivers[:3]
         fig, axes = plt.subplots(len(sample), 2, figsize=(14, 4 * len(sample)),
                                  gridspec_kw={'width_ratios': [3, 1]})
         if len(sample) == 1:
@@ -454,29 +490,33 @@ def plot_cluster_verification(df_season, out_dir="results/clustering/verificatio
             ax_b.set_ylabel("P(cluster)")
             ax_b.set_xlabel("Lap")
 
-        fig.suptitle(f"{location} — Cluster verification", fontsize=12)
+        fig.suptitle(f"{race_label} — Cluster verification", fontsize=12)
         plt.tight_layout()
-        safe_loc = location.replace(' ', '_')
-        plt.savefig(f"{out_dir}/{safe_loc}_timeline.png", dpi=150, bbox_inches='tight')
+        plt.savefig(f"{out_dir}/{safe_name}_timeline.png", dpi=150, bbox_inches='tight')
         plt.close()
 
     # cross-race cluster distribution heatmap
     cluster_pct = (
-        df_season.groupby(['Location', 'Style_Cluster_ID'])
+        df_season.groupby(group_keys + ['Style_Cluster_ID'])
         .size()
         .unstack(fill_value=0)
     )
     cluster_pct = cluster_pct.div(cluster_pct.sum(axis=1), axis=0) * 100
 
-    fig, ax = plt.subplots(figsize=(max(6, n_k * 2), max(4, len(cluster_pct) * 0.5 + 1)))
+    if has_year:
+        row_labels = [f"{y} {l}" for y, l in cluster_pct.index]
+    else:
+        row_labels = list(cluster_pct.index)
+
+    fig, ax = plt.subplots(figsize=(max(6, n_k * 2), max(4, len(cluster_pct) * 0.4 + 1)))
     im = ax.imshow(cluster_pct.values, aspect='auto', cmap='RdYlGn', vmin=0, vmax=100)
     ax.set_xticks(range(n_k))
     ax.set_xticklabels([CLUSTER_NAMES.get(i, f'C{i}') for i in range(n_k)], rotation=20, ha='right')
     ax.set_yticks(range(len(cluster_pct)))
-    ax.set_yticklabels(cluster_pct.index)
+    ax.set_yticklabels(row_labels, fontsize=7)
     for i in range(len(cluster_pct)):
         for j in range(n_k):
-            ax.text(j, i, f"{cluster_pct.values[i, j]:.0f}%", ha='center', va='center', fontsize=8)
+            ax.text(j, i, f"{cluster_pct.values[i, j]:.0f}%", ha='center', va='center', fontsize=7)
     plt.colorbar(im, ax=ax, label='% of laps')
     ax.set_title("Cluster distribution per race (%)")
     plt.tight_layout()
@@ -512,13 +552,13 @@ CLUSTER_FEATURES = [
     'Throttle_Integral_Norm',
 ]
 
-def run_clustering_features(session, laps, all_telemetry=None, n_clusters=N_CLUSTERS):
+def run_clustering_features(session, laps, all_telemetry=None, n_clusters=N_CLUSTERS, circuit_info=None):
     """
     Full clustering pipeline: corner extraction -> lap aggregation -> normalisation -> GMM.
     Cluster labels are ordered by aggression score each race independently.
     """
-    corner_zones = build_corner_zones(session)
-    corner_weights = calculate_circuit_weights(session, corner_zones=corner_zones)
+    corner_zones = build_corner_zones(circuit_info=circuit_info) if circuit_info else build_corner_zones(session=session)
+    corner_weights = calculate_circuit_weights(session, corner_zones=corner_zones, all_telemetry=all_telemetry)
     df_corners = build_corner_database(session, laps, all_telemetry=all_telemetry, corner_zones=corner_zones)
     if df_corners.empty:
         return pd.DataFrame()

@@ -1,13 +1,15 @@
 import fastf1
 import os
+import logging
 import numpy as np
 import pandas as pd
 import time
 from sklearn.preprocessing import LabelEncoder
 
-
 from telemetry import run_telemetry_feature_generation
 from clustering_lap import plot_cluster_verification
+
+logger = logging.getLogger('data_preparation')
 
 def prepare_race(session):
     """
@@ -15,6 +17,8 @@ def prepare_race(session):
     """
     laps = session.laps
     laps['Location'] = session.event['Location']
+    laps['Year'] = session.event.year
+    laps['RoundNumber'] = session.event['RoundNumber']
 
     drivers = session.drivers
     drivers = [session.get_driver(driver)["Abbreviation"] for driver in drivers]
@@ -87,7 +91,7 @@ def add_physics_track_evolution(df_laps, df_tracks):
     """
     Add physics-based track evolution features based on cumulative distance driven and Pirelli parameters
     """
-    df_merged = df_laps.merge(df_tracks, on='Location', how='left')
+    df_merged = df_laps.merge(df_tracks, on=['Location', 'Year'], how='left')
 
     if df_merged['Track_Evolution_1_5'].isna().any():
         print(f"Missing track evolution data: {df_merged[df_merged['Track_Evolution_1_5'].isna()]['Location'].unique()}")
@@ -104,7 +108,7 @@ def add_physics_track_evolution(df_laps, df_tracks):
     return df_merged
 
 
-def add_lag_features(df_clean):
+def add_lag_features(df_clean, summary_lines):
     """
     Add to dataframe lag features of previous times
     """
@@ -130,36 +134,36 @@ def add_lag_features(df_clean):
     df_ts = df_ts.dropna(subset=['Prev_LapTime', 'Rolling_Avg_3']).reset_index(drop=True)
     df_ts = df_ts.drop(columns=['Micro_Stint_ID'])
     
-    print(f"Final Laps with History: {len(df_ts)}")
+    log(summary_lines, f"Final Laps with History: {len(df_ts)}")
     return df_ts
 
 
-def remove_wet_laps(df):
+def remove_wet_laps(df, summary_lines):
     """
     Cleans wet laps from a dataframe
     """
     df_dry = df.copy()
-    
+
     # remove all laps during or after rainfall starts
     rainy_laps = df_dry[df_dry['Rainfall'] == True]
-    
+
     if not rainy_laps.empty:
         first_rain_time = rainy_laps['Time'].min()
         df_dry = df_dry[df_dry['Time'] < first_rain_time]
-        print(f"Rain detected at {first_rain_time}. Dropped all subsequent laps.")
-    
-    print(f"Total Laps Input: {len(df)}")
-    print(f"Valid Dry Laps Retained: {len(df_dry)}\n")
-    
+        log(summary_lines, f"Rain detected at {first_rain_time}. Dropped all subsequent laps.")
+
+    log(summary_lines, f"Total Laps input: {len(df)}")
+    log(summary_lines, f"Valid Dry Laps saved: {len(df_dry)}\n")
+
     return df_dry
 
 
-def clean_laps(df):
+def clean_laps(df, summary_lines):
     """
     Deletes in/out, SC/VSC laps and keeps only needed columns
     """
     # remove rain
-    df_dry = remove_wet_laps(df)
+    df_dry = remove_wet_laps(df, summary_lines)
 
     # filter green flag laps with real timing and no pit stops
     mask = (
@@ -172,7 +176,7 @@ def clean_laps(df):
     df_clean = df_dry.loc[mask].copy()
 
     # clean up columns
-    cols_to_keep = ['Time', 'Driver', 'LapTime', 'LapNumber', 'Stint', 'Compound',
+    cols_to_keep = ['Time', 'Year', 'RoundNumber', 'Driver', 'LapTime', 'LapNumber', 'Stint', 'Compound',
        'TyreLife', 'Team', 'Location', 'Position', 'AirTemp', 'Humidity', 'Pressure',
        'Rainfall', 'TrackTemp', 'WindDirection', 'WindSpeed', 'LapTime_Sec',
        'FuelLoad', 'Track_Evolution_Physics', 'Traction_1_5',
@@ -203,9 +207,18 @@ def clean_laps(df):
 
     valid_cols = [c for c in cols_to_keep if c in df_clean.columns]
 
-    print(f"Clean Green Laps: {len(df_clean)}\n")
+    log(summary_lines, f"Clean Green Laps: {len(df_clean)}\n")
 
     return df_clean[valid_cols].sort_values(by=['Driver', 'LapNumber']).reset_index(drop=True)
+
+
+def log(summary_lines, *args, **kwargs):
+    """
+    Prints to terminal and appends to summary_lines for file saving
+    """
+    text = " ".join(str(a) for a in args)
+    print(text, **kwargs)
+    summary_lines.append(text)
 
 
 def get_pirelli_press_data(file_path):
@@ -239,50 +252,95 @@ def encode_categorical_features(df):
 if __name__ == "__main__":
     start_time = time.time()
     os.makedirs("cache", exist_ok=True)
+    os.makedirs("logs", exist_ok=True)
     fastf1.Cache.enable_cache('cache')
+
+    # file logger for errors across all pipeline modules
+    class RaceContextFilter(logging.Filter):
+        def __init__(self):
+            super().__init__()
+            self.race = 'N/A'
+        def filter(self, record):
+            record.race = self.race
+            return True
+
+    race_filter = RaceContextFilter()
+
+    file_handler = logging.FileHandler('logs/errors.log', mode='w')
+    file_handler.setLevel(logging.WARNING)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s | %(race)s | %(name)s | %(levelname)s | %(message)s'))
+    file_handler.addFilter(race_filter)
+    logging.getLogger().addHandler(file_handler)
+    logging.getLogger().setLevel(logging.WARNING)
+
+    summary_lines = []
+    summary_path = "logs/summary_data_preparation.txt"
 
     df_pirelli_all = get_pirelli_press_data('data/track_parameters.csv')
 
-    YEAR = 2023
-    df_pirelli = df_pirelli_all[df_pirelli_all['Year'] == YEAR].copy()
-    locations = df_pirelli['Location'].unique()
+    YEARS = [2022, 2023, 2024, 2025]
     full_dataset = []
 
-    for location in locations:
-        print(f"\n{'-'*55}")
-        print(f"Processing: {YEAR} - {location}\n")
+    for YEAR in YEARS:
+        df_pirelli = df_pirelli_all[df_pirelli_all['Year'] == YEAR].copy()
+        locations = df_pirelli['Location'].unique()
 
-        try:
-            session = fastf1.get_session(YEAR, location, 'R')
-            session.load()
+        for location in locations:
+            race_filter.race = f"{YEAR} {location}"
+            log(summary_lines, f"\n{'-'*55}")
+            log(summary_lines, f"Processing: {YEAR} - {location}\n")
 
-            laps, drivers, stints = prepare_race(session)
-            df_weather = merge_weather(session, laps)
-            df_fuel = calculate_physics_fuel_load(session, df_weather)
-            df_track = add_physics_track_evolution(df_fuel, df_pirelli)
+            try:
+                session = fastf1.get_session(YEAR, location, 'R')
+                for attempt in range(3):
+                    try:
+                        session.load()
+                        break
+                    except Exception as e:
+                        if attempt == 2:
+                            raise
+                        logger.warning(f"{YEAR} {location}: session.load() attempt {attempt+1} failed: {e}, retrying...")
+                        time.sleep(5)
 
-            # telemetry features + clustering
-            df_telemetry = run_telemetry_feature_generation(session, df_track)
-            
-            df_clean = clean_laps(df_telemetry)
-            df_lag = add_lag_features(df_clean)
+                circuit_info = session.get_circuit_info()
 
-            full_dataset.append(df_lag)
-            print(f"{location} processed {len(df_lag)} rows")
+                laps, drivers, stints = prepare_race(session)
+                df_weather = merge_weather(session, laps)
+                df_fuel = calculate_physics_fuel_load(session, df_weather)
+                df_track = add_physics_track_evolution(df_fuel, df_pirelli)
 
-        except Exception as e:
-            print(f"Could not process {location}. Error: {e}")
-            continue
-    
+                df_telemetry = run_telemetry_feature_generation(session, df_track, circuit_info=circuit_info)
+
+                df_clean = clean_laps(df_telemetry, summary_lines)
+                df_lag = add_lag_features(df_clean, summary_lines)
+
+                full_dataset.append(df_lag)
+                log(summary_lines, f"{YEAR} {location} processed {len(df_lag)} rows")
+
+            except Exception as e:
+                logger.error(f"{YEAR} {location}: {e}", exc_info=True)
+                log(summary_lines, f"Could not process {YEAR} {location}. Error: {e}")
+                continue
+
     if full_dataset:
-        df_final_season = pd.concat(full_dataset, ignore_index=True)
-        df_final_season, label_encoders = encode_categorical_features(df_final_season)
-        df_final_season.to_csv(f'data/dataset_{YEAR}.csv', index=False)
+        df_all = pd.concat(full_dataset, ignore_index=True)
 
-        plot_cluster_verification(df_final_season)
+        # encode once across all years
+        df_all, label_encoders = encode_categorical_features(df_all)
+        df_all.to_csv('data/dataset_all.csv', index=False)
+
+        if 'Style_Cluster_ID' in df_all.columns:
+            plot_cluster_verification(df_all)
+            log(summary_lines, "Verification plots saved to results/clustering/verification/")
+        else:
+            log(summary_lines, "Skipping cluster verification — clustering columns missing")
 
         total_time = (time.time() - start_time) / 60
-        print(f"Season time taken {total_time:.2f} minutes")
-        print(f"Total laps compiled: {len(df_final_season)}")
+        log(summary_lines, f"Total time taken: {total_time:.2f} minutes")
+        log(summary_lines, f"Total laps: {len(df_all)}")
     else:
-        print("No races were successfully processed")
+        log(summary_lines, "No races were successfully processed")
+
+    with open(summary_path, 'w') as f:
+        f.write('\n'.join(summary_lines))
+    print(f"Summary saved to {summary_path}")

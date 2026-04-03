@@ -1,9 +1,11 @@
-import pandas as pd
+import logging
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 import time
 from clustering_lap import run_clustering_features
+
+logger = logging.getLogger('telemetry')
 
 def add_derived_features(df):
     """"
@@ -41,7 +43,8 @@ def calculate_dirty_air(lap_tel, dirty_air_threshold=2.0):
         mean_gap = valid.mean()
         dirty_air_fraction = (valid < dirty_air_threshold).sum() / len(valid)
         return mean_gap, dirty_air_fraction
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Dirty air calculation failed: {e}")
         return 5.0, 0.0
 
 def calculate_energy(telemetry):
@@ -71,15 +74,19 @@ def calculate_energy(telemetry):
 
         dist = np.cumsum(np.asarray(v) * np.asarray(dt)) + np.arange(len(x_m)) * 1e-9
 
-        dx = np.gradient(x_m, dist)
-        dy = np.gradient(y_m, dist)
-        ddx = np.gradient(dx, dist)
-        ddy = np.gradient(dy, dist)
+        # handle numerical issues in curvature calculation
+        with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+            dx = np.gradient(x_m, dist)
+            dy = np.gradient(y_m, dist)
+            ddx = np.gradient(dx, dist)
+            ddy = np.gradient(dy, dist)
 
-        curvature = (dx * ddy - dy * ddx) / (np.power(dx**2 + dy**2, 1.5) + 1e-6)
+            curvature = (dx * ddy - dy * ddx) / (np.power(dx**2 + dy**2, 1.5) + 1e-6)
+        curvature = np.nan_to_num(curvature, nan=0.0, posinf=0.0, neginf=0.0)
         a_lat = (v**2) * np.abs(curvature)
         a_lat = np.clip(a_lat, 0, 60.0)
-    except:
+    except Exception as e:
+        logger.warning(f"Lateral acceleration calculation failed: {e}")
         a_lat = np.zeros(len(telemetry))
 
     combined_accel = np.sqrt(a_long**2 + a_lat**2)
@@ -146,6 +153,8 @@ def get_reference_lap(session):
     """
     q_laps = session.laps.pick_quicklaps().pick_wo_box()
     ref_lap = q_laps.pick_fastest()
+    if ref_lap is None or (hasattr(ref_lap, 'empty') and ref_lap.empty):
+        return None, None, None, None
     ref_tel = ref_lap.get_telemetry().add_distance().dropna(subset=['X', 'Y', 'Distance'])
     ref_tel['NormDist'] = ref_tel['Distance'] / ref_tel['Distance'].max()
     ref_tel = ref_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)
@@ -161,7 +170,7 @@ def get_reference_lap(session):
     return ref_nd, ix, iy, window
 
 
-def generate_telemetry_features_dataset(session, df_laps):
+def generate_telemetry_features_dataset(session, df_laps, circuit_info=None):
     """
     Main pipeline function to generate telemetry features dataset
     """
@@ -184,6 +193,7 @@ def generate_telemetry_features_dataset(session, df_laps):
     active_drivers = df_laps['Driver'].unique()
 
     ref_nd, ix, iy, window = get_reference_lap(session)
+    has_reference_lap = ref_nd is not None
 
     # get telemetry
     all_telemetry = {}
@@ -195,8 +205,8 @@ def generate_telemetry_features_dataset(session, df_laps):
                 if len(tel) >= 10:
                     tel['Energy_Tick'] = calculate_energy(tel)
                     all_telemetry[drv] = tel
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Telemetry load failed for driver {drv}: {e}")
 
     # map telemetry back to laps
     for idx, row in df_laps.iterrows():
@@ -228,17 +238,17 @@ def generate_telemetry_features_dataset(session, df_laps):
                     df_laps.loc[idx, 'DRS_Fraction'] = drs_active.sum() / len(lap_tel)
 
                 # calculate lateral offset metrics
-                lap_dist = lap_tel['Distance'] - lap_tel['Distance'].min()
-                lap_tel['NormDist'] = lap_dist / lap_dist.max()				
-                lap_tel = lap_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)
+                if has_reference_lap:
+                    lap_dist = lap_tel['Distance'] - lap_tel['Distance'].min()
+                    lap_tel['NormDist'] = lap_dist / lap_dist.max()
+                    lap_tel = lap_tel.sort_values('NormDist').drop_duplicates('NormDist').reset_index(drop=True)
 
-                lap_offset_tel = calculate_lateral_offset(lap_tel, ref_nd, ix, iy, window)
-                
-                df_laps.loc[idx, 'LatOffset_Mean'] = lap_offset_tel['LateralOffset_m'].mean()
-                df_laps.loc[idx, 'LatOffset_Std'] = lap_offset_tel['LateralOffset_m'].std()
+                    lap_offset_tel = calculate_lateral_offset(lap_tel, ref_nd, ix, iy, window)
+                    df_laps.loc[idx, 'LatOffset_Mean'] = lap_offset_tel['LateralOffset_m'].mean()
+                    df_laps.loc[idx, 'LatOffset_Std'] = lap_offset_tel['LateralOffset_m'].std()
                 
         except Exception as e:
-            print(f"Error processing telemetry for driver {driver} lap {row['LapNumber']}: {e}")
+            logger.warning(f"Driver {driver} lap {row['LapNumber']}: {e}")
             continue
     
     # run clustering
@@ -250,20 +260,20 @@ def generate_telemetry_features_dataset(session, df_laps):
     ].reset_index(drop=True)
 
     try:
-        df_clustered = run_clustering_features(session, clustering_laps, all_telemetry=all_telemetry)
+        df_clustered = run_clustering_features(session, clustering_laps, all_telemetry=all_telemetry, circuit_info=circuit_info)
         if not df_clustered.empty:
             df_laps = df_laps.merge(df_clustered, on=['Driver', 'LapNumber'], how='left')
     except Exception as e:
-        print(f"Clustering features failed: {e}")
+        logger.error(f"Clustering features failed: {e}", exc_info=True)
 
     df_laps = build_accumulated_wear(df_laps)
 
     return df_laps
 
 
-def run_telemetry_feature_generation(session, df):
+def run_telemetry_feature_generation(session, df, circuit_info=None):
     start = time.time()
-    df_race_wear = generate_telemetry_features_dataset(session, df)
+    df_race_wear = generate_telemetry_features_dataset(session, df, circuit_info=circuit_info)
 
     end = time.time()
     print(f"\nTelemetry features time taken: {end - start:.4f} seconds\n")

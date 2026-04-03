@@ -13,8 +13,8 @@ def convert_deltas_to_absolute_times(simulation_results, df_with_telemetry):
     Converts deltas time back to absolute lap times
     """
     simulation_results = simulation_results.merge(
-        df_with_telemetry[['Location', 'Driver', 'LapNumber', 'Prev_LapTime']], 
-        on=['Location', 'Driver', 'LapNumber'], how='left')
+        df_with_telemetry[['Year', 'Location', 'Driver', 'LapNumber', 'Prev_LapTime']],
+        on=['Year', 'Location', 'Driver', 'LapNumber'], how='left')
 
     simulation_results['Predicted_Time'] = simulation_results['Prev_LapTime'] + simulation_results['Predicted']
     simulation_results['Actual_Time'] = simulation_results['Prev_LapTime'] + simulation_results['Actual']
@@ -182,21 +182,21 @@ def plot_full_season_slopes(results_df, driver_code):
 def run_season_walk_forward(df, features, model, summary_lines, target='LapTime_Sec', min_train_races=5, print_progress=True):
     start_time = time.time()
 
-    df = df.sort_values(by='Time').reset_index(drop=True)
+    df = df.sort_values(by=['Year', 'RoundNumber']).reset_index(drop=True)
 
-    races = df['Location'].unique()
+    df['_RaceKey'] = df['Year'].astype(str) + '_' + df['Location']
+    races = df['_RaceKey'].unique()
     predictions_log = []
 
     log(summary_lines, f"Total races in dataset: {len(races)}")
     log(summary_lines, f"Initial training on first {min_train_races} races\n")
 
-    # train on full races and test on the next one, iterating through the season
     for i in range(min_train_races, len(races)):
         train_races = races[:i]
         test_race = races[i]
 
-        train_data = df[df['Location'].isin(train_races)]
-        test_data = df[df['Location'] == test_race].copy()
+        train_data = df[df['_RaceKey'].isin(train_races)]
+        test_data = df[df['_RaceKey'] == test_race].copy()
 
         X_train = train_data[features]
         y_train = train_data[target]
@@ -213,13 +213,14 @@ def run_season_walk_forward(df, features, model, summary_lines, target='LapTime_
         test_data['Actual'] = y_actual
         test_data['Error'] = np.abs(y_actual - preds)
 
-        predictions_log.append(test_data[['Location', 'Location_Encoded', 'Driver', 'LapNumber', 'Stint', 'Compound', 'Actual', 'Predicted', 'Error']])
+        predictions_log.append(test_data[['Year', 'RoundNumber', 'Location', 'Location_Encoded', 'Driver', 'LapNumber', 'Stint', 'Compound', 'Actual', 'Predicted', 'Error']])
 
         if print_progress:
             race_mae = mean_absolute_error(y_actual, preds)
             log(summary_lines, f"Tested on {test_race} | Train size: {len(train_data)} laps | MAE: {race_mae:.3f} s")
 
     results_df = pd.concat(predictions_log, ignore_index=True)
+    df.drop(columns=['_RaceKey'], inplace=True)
 
     global_mae = mean_absolute_error(results_df['Actual'], results_df['Predicted'])
     global_rmse = np.sqrt(mean_squared_error(results_df['Actual'], results_df['Predicted']))
@@ -248,10 +249,30 @@ if __name__ == "__main__":
     summary_lines = []
     summary_path = "results/summary_model_training.txt"
 
-    df_with_telemetry = pd.read_csv('data/dataset_2023.csv')
+    df_with_telemetry = pd.read_csv('data/dataset_all.csv')
+
+    # shift telemetry features by 1 lap (to remove data leakage and make a forecasting model)
+    telemetry_features_to_shift = [
+        'E_lap', 'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'DRS_Fraction',
+        'LatOffset_Mean', 'LatOffset_Std', 'Aero_Loss', 'Lap_Damage',
+        'Accumulated_Tyre_Wear', 'Tyre_Grip_Index',
+        'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+        'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+        'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+        'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+        'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+        'Mean_Speed_CV', 'Std_Speed_CV',
+        'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
+    ]
+    df_with_telemetry = df_with_telemetry.sort_values(by=['Location', 'Driver', 'LapNumber'])
+    to_shift = [f for f in telemetry_features_to_shift if f in df_with_telemetry.columns]
+    for feat in to_shift:
+        df_with_telemetry[feat] = df_with_telemetry.groupby(['Location', 'Driver', 'Stint'])[feat].shift(1)
+    df_with_telemetry = df_with_telemetry.dropna(subset=to_shift).reset_index(drop=True)
+    print(f"Shifted {len(to_shift)} telemetry features by 1 lap. Rows remaining: {len(df_with_telemetry)}")
 
     features = [
-        'LapNumber', 'Stint',
+        'Year', 'LapNumber', 'Stint',
         'TyreLife', 'Tyre_Compound_Interaction',
         'AirTemp', 'Humidity', 'Pressure',
         'TrackTemp', 'WindDirection', 'WindSpeed',
@@ -284,7 +305,7 @@ if __name__ == "__main__":
 
     model = XGBRegressor(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42)
     
-    simulation_results = run_season_walk_forward(df_with_telemetry, features, model, summary_lines, target='Target_Delta', min_train_races=6, print_progress=True)
+    simulation_results = run_season_walk_forward(df_with_telemetry, features, model, summary_lines, target='Target_Delta', min_train_races=20, print_progress=True)
     simulation_results = convert_deltas_to_absolute_times(simulation_results, df_with_telemetry)
 
     importance_df = feature_importance_walk_forward_delta(df_with_telemetry, features)
