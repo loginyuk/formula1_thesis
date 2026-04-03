@@ -4,20 +4,12 @@ __pycache__
 .vscode/
 
 errors.txt
-clustering_lap_*
-cluster_visualizations.py
-feature_analysis.py
-correlation_matrix.py
-documentation
-
 test.py
-results/cluster_visualizations
-results/clustering
-results/feature_analysis
-results/old*
-results/correlation
-results/all_years
+
+results/older
+results/clustering/2023_Silverstone/drivers/
+
 logs/with_errors
 
-results/results_errors_season_old.png
-results/season_degradation_VER_old.png
+documentation
+archive/

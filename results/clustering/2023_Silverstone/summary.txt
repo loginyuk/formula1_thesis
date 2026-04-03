@@ -1,0 +1,51 @@
+Session: British Grand Prix 2023
+
+Extracting corner features
+  14436 corners
+Aggregating corners to laps
+  802 laps, 20 drivers
+
+Feature ranges after normalisation:
+     Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+min                    -2.21                         -1.53                          -2.60
+max                     2.54                          2.49                           2.04
+std                     0.77                          0.72                           0.76
+
+Fitting GMM with k=3 clusters
+
+Sample output:
+    Driver  LapNumber       P_0       P_1       P_2  Style_Entropy  Style_Cluster_ID
+715    VER        2.0  0.857739  0.108072  0.034189       0.487496                 0
+716    VER        3.0  0.369485  0.534276  0.096239       0.928070                 1
+717    VER        4.0  0.002231  0.003706  0.994063       0.040285                 2
+718    VER        5.0  0.913037  0.044705  0.042259       0.355698                 0
+719    VER        6.0  0.219977  0.719427  0.060596       0.739885                 1
+720    VER        7.0  0.085825  0.230625  0.683550       0.809117                 2
+721    VER        8.0  0.079192  0.886751  0.034057       0.422503                 1
+722    VER        9.0  0.495746  0.428808  0.075445       0.905929                 0
+723    VER       10.0  0.033802  0.486261  0.479937       0.817415                 1
+724    VER       11.0  0.007237  0.564874  0.427889       0.721530                 1
+
+Cluster distribution:
+Style_Cluster_ID
+0    359
+2    236
+1    207
+
+Cluster centroids (Z-scored features):
+                  Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                      
+0                                  -0.352                        -0.424                          0.288
+1                                   0.515                         0.010                          0.291
+2                                   0.160                         0.893                         -0.968
+
+Cluster centroids (raw feature means):
+                  Mean_Apex_Speed_Ratio  Mean_Throttle_On_Dist_Norm  Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                
+0                                0.8467                      0.2201                       0.6335
+1                                0.8717                      0.2645                       0.6337
+2                                0.8615                      0.3546                       0.5301
+
+Lap-level results saved to /Users/loginuha/programing/thesis/formula1_thesis/results/clustering/2023_Silverstone/lap_clusters.csv
+
+Clustering completed in 21.09 seconds
