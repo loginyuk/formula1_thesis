@@ -36,6 +36,40 @@ def plot_feature_importance(df, features, out_dir=RESULTS_MODEL_DIR):
     return importance_df
 
 
+def plot_model_comparison(comparison_rows, out_dir=RESULTS_MODEL_DIR):
+    """
+    comparison_rows: list of dicts with keys 'Model', 'MAE', 'RMSE'
+    Saves a bar chart and a CSV summary.
+    """
+    df = pd.DataFrame(comparison_rows).sort_values('MAE')
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    x = np.arange(len(df))
+    width = 0.38
+    bars_mae  = ax.bar(x - width/2, df['MAE'],  width, label='MAE',  color='steelblue', alpha=0.88)
+    bars_rmse = ax.bar(x + width/2, df['RMSE'], width, label='RMSE', color='tomato',    alpha=0.88)
+
+    ax.bar_label(bars_mae,  fmt='%.3f', padding=3, fontsize=9)
+    ax.bar_label(bars_rmse, fmt='%.3f', padding=3, fontsize=9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(df['Model'], rotation=20, ha='right', fontsize=10)
+    ax.set_ylabel('Error (seconds)', fontsize=11)
+    ax.set_title('Walk-Forward Validation — Model Comparison', fontsize=13)
+    ax.legend(frameon=False)
+    ax.yaxis.grid(True, ls='--', alpha=0.3)
+    ax.set_axisbelow(True)
+
+    plt.tight_layout()
+    os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(f'{out_dir}/model_comparison.png', dpi=200, bbox_inches='tight')
+    plt.close()
+
+    df.to_csv(f'{out_dir}/model_comparison.csv', index=False)
+    print(f"Saved model comparison → {out_dir}/")
+    return df
+
+
 def analyze_slope_prediction(results_df, driver_code, stint_id, out_dir=RESULTS_MODEL_DIR):
     stint_data = results_df[
         (results_df['Driver'] == driver_code) &

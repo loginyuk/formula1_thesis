@@ -8,8 +8,11 @@ test.py
 
 results/older
 results/clustering/2023_Silverstone/drivers/
+results/model/*/
 
 logs/with_errors
 
 documentation
 archive/
+
+catboost_info/

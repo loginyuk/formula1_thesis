@@ -1,0 +1,62 @@
+
+========================================
+Model: Ridge
+========================================
+Total races in dataset: 83
+Initial training on first 20 races
+
+  MAE:  1.793 s
+  RMSE: 12.443 s
+  Time: 29.0 s
+
+========================================
+Model: RandomForest
+========================================
+Total races in dataset: 83
+Initial training on first 20 races
+
+  MAE:  0.369 s
+  RMSE: 0.633 s
+  Time: 118.3 s
+
+========================================
+Model: XGBoost
+========================================
+Total races in dataset: 83
+Initial training on first 20 races
+
+  MAE:  0.365 s
+  RMSE: 0.618 s
+  Time: 24.7 s
+
+========================================
+Model: LightGBM
+========================================
+Total races in dataset: 83
+Initial training on first 20 races
+
+  MAE:  0.355 s
+  RMSE: 0.592 s
+  Time: 36.5 s
+
+========================================
+Model: CatBoost
+========================================
+Total races in dataset: 83
+Initial training on first 20 races
+
+  MAE:  0.351 s
+  RMSE: 0.603 s
+  Time: 24.9 s
+
+========================================
+Final Comparison
+========================================
+       Model      MAE      RMSE     Time_s
+    CatBoost 0.351155  0.602630  24.881944
+    LightGBM 0.355127  0.592293  36.494269
+     XGBoost 0.365346  0.618309  24.689512
+RandomForest 0.369160  0.633061 118.274301
+       Ridge 1.793496 12.443487  29.041481
+
+Total time: 275.4 s
