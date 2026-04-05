@@ -1,3 +1,3 @@
-from .training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
+from .training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features, compute_metrics
 from .analysis import plot_feature_importance, analyze_slope_prediction, plot_model_comparison
-from .plots import plot_full_season_slopes
+from .plots import plot_full_season_slopes, plot_predicted_vs_actual, plot_residual_analysis, plot_per_race_mae, plot_compound_breakdown, plot_driver_mae, plot_no_clustering

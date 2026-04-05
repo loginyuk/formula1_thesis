@@ -9,6 +9,7 @@ test.py
 results/older
 results/clustering/2023_Silverstone/drivers/
 results/model/*/
+results/clustering/verification/
 
 logs/with_errors
 

@@ -21,7 +21,6 @@ import optuna
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
@@ -32,7 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL, MIN_TRAIN_RACES, CV_N_SPLITS, CV_N_JOBS
 from src.utils import log, write_summary
-from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
+from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features, compute_metrics
 from src.modeling.analysis import plot_model_comparison
 
 
@@ -147,13 +146,14 @@ if __name__ == "__main__":
         results = convert_deltas_to_absolute_times(results, df)
         wf_time = time.time() - t1
 
-        mae  = mean_absolute_error(results['Actual'], results['Predicted'])
-        rmse = np.sqrt(mean_squared_error(results['Actual'], results['Predicted']))
-        log(summary_lines, f"Walk-forward MAE:  {mae:.3f} s")
-        log(summary_lines, f"Walk-forward RMSE: {rmse:.3f} s")
+        metrics = compute_metrics(results['Actual'].values, results['Predicted'].values)
+        log(summary_lines, f"Walk-forward MAE:  {metrics['MAE']:.3f} s")
+        log(summary_lines, f"Walk-forward RMSE: {metrics['RMSE']:.3f} s")
+        log(summary_lines, f"Walk-forward R2:   {metrics['R2']:.4f}")
+        log(summary_lines, f"Walk-forward MAPE: {metrics['MAPE']:.2f} %")
         log(summary_lines, f"Walk-forward time: {wf_time:.1f} s")
 
-        comparison_rows.append({'Model': f"{model_name} (tuned)", 'MAE': mae, 'RMSE': rmse, 'Time_s': wf_time})
+        comparison_rows.append({'Model': f"{model_name} (tuned)", **metrics, 'Time_s': wf_time})
 
         model_dir = os.path.join(RESULTS_MODEL_DIR, f"{model_name}_tuned")
         os.makedirs(model_dir, exist_ok=True)

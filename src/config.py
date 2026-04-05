@@ -88,8 +88,21 @@ TELEMETRY_FEATURES_TO_SHIFT = [
     'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
 ]
 
+# Cluster features for no clustering study
+CLUSTER_PIPELINE_FEATURES = [
+    'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+    'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+    'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+    'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+    'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+    'Mean_Speed_CV', 'Std_Speed_CV',
+    'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
+]
+
+MODEL_FEATURES_NO_CLUSTER = [f for f in MODEL_FEATURES if f not in CLUSTER_PIPELINE_FEATURES]
+
 # Walk-forward validation constants
-MIN_TRAIN_RACES = 20   # minimum races before first prediction
+MIN_TRAIN_RACES = 5   # minimum races before first prediction
 CV_N_SPLITS     = 5    # TimeSeriesSplit folds for hyperparameter tuning
 CV_N_JOBS       = 1    # parallelism for CV
 
@@ -101,7 +114,7 @@ BEST_PARAMS_FILE = os.path.join(RESULTS_DIR, "model", "best_params.json")
 MODEL_DEFAULTS = {
     "XGBoost":      dict(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42, verbosity=0),
     "LightGBM":     dict(n_estimators=100, max_depth=5, num_leaves=31, learning_rate=0.1, random_state=42, verbose=-1),
-    "CatBoost":     dict(iterations=100, depth=5, learning_rate=0.1, random_state=42, verbose=0),
+    "CatBoost":     dict(iterations=100, depth=5, learning_rate=0.1, random_state=42, verbose=0, silent=True),
     "RandomForest": dict(n_estimators=100, max_features='sqrt', max_depth=15, random_state=42),
     "Ridge":        dict(),
 }

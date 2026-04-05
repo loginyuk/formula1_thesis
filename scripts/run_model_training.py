@@ -31,18 +31,21 @@ from src.config import (
     MIN_TRAIN_RACES, PRIMARY_MODEL, BEST_PARAMS_FILE, MODEL_DEFAULTS,
 )
 from src.utils import log, write_summary
-from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
+from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features, compute_metrics
 from src.modeling.analysis import plot_feature_importance
-from src.modeling.plots import plot_full_season_slopes
+from src.modeling.plots import (
+    plot_full_season_slopes, plot_predicted_vs_actual,
+    plot_residual_analysis, plot_per_race_mae, plot_compound_breakdown, plot_driver_mae
+)
 
 
 def build_model(name, params):
     if name == "XGBoost":
         return XGBRegressor(**params, n_jobs=-1)
     if name == "LightGBM":
-        return LGBMRegressor(**params, n_jobs=-1)
+        return LGBMRegressor(**params, n_jobs=-1, verbose=-1)
     if name == "CatBoost":
-        return CatBoostRegressor(**params)
+        return CatBoostRegressor(**params, verbose=0, silent=True)
     if name == "RandomForest":
         return Pipeline([
             ('imputer', SimpleImputer(strategy='median')),
@@ -93,8 +96,20 @@ if __name__ == "__main__":
     )
     simulation_results = convert_deltas_to_absolute_times(simulation_results, df)
 
-    plot_feature_importance(df, MODEL_FEATURES)
+    metrics = compute_metrics(simulation_results['Actual'].values, simulation_results['Predicted'].values)
+    log(summary_lines, f"\nMetrics on absolute lap times")
+    log(summary_lines, f"MAE:  {metrics['MAE']:.3f} s")
+    log(summary_lines, f"RMSE: {metrics['RMSE']:.3f} s")
+    log(summary_lines, f"R2:   {metrics['R2']:.4f}")
+    log(summary_lines, f"MAPE: {metrics['MAPE']:.2f} %")
+
+    plot_feature_importance(df, MODEL_FEATURES, model)
     plot_full_season_slopes(simulation_results, 'VER')
+    plot_predicted_vs_actual(simulation_results)
+    plot_residual_analysis(simulation_results)
+    plot_per_race_mae(simulation_results)
+    plot_compound_breakdown(simulation_results)
+    plot_driver_mae(simulation_results)
 
     log(summary_lines, f"\nTotal time: {time.time() - start:.1f} s")
     write_summary(summary_lines, summary_path)

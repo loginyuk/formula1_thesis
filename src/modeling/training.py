@@ -2,10 +2,19 @@ import time
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src.utils import log
 from src.config import TELEMETRY_FEATURES_TO_SHIFT
+
+
+def compute_metrics(actual, predicted):
+    mae  = mean_absolute_error(actual, predicted)
+    rmse = np.sqrt(mean_squared_error(actual, predicted))
+    r2   = r2_score(actual, predicted)
+    mask = np.abs(actual) > 1e-6
+    mape = np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])) * 100 if mask.any() else 0.0
+    return {'MAE': mae, 'RMSE': rmse, 'R2': r2, 'MAPE': mape}
 
 
 def convert_deltas_to_absolute_times(simulation_results, df_with_telemetry):
@@ -87,15 +96,15 @@ def run_season_walk_forward(df, features, model, summary_lines, target='LapTime_
     results_df = pd.concat(predictions_log, ignore_index=True)
     df.drop(columns=['_RaceKey'], inplace=True)
 
-    global_mae = mean_absolute_error(results_df['Actual'], results_df['Predicted'])
-    global_rmse = np.sqrt(mean_squared_error(results_df['Actual'], results_df['Predicted']))
+    mae  = mean_absolute_error(results_df['Actual'], results_df['Predicted'])
+    rmse = np.sqrt(mean_squared_error(results_df['Actual'], results_df['Predicted']))
 
     end_time = time.time()
     if print_progress:
         log(summary_lines, f"\n{'-'*30}")
         log(summary_lines, f"Total Test Laps Predicted: {len(results_df)}")
-        log(summary_lines, f"Global Average MAE: {global_mae:.3f} s")
-        log(summary_lines, f"Global RMSE: {global_rmse:.3f} s")
-        log(summary_lines, f"Time Taken: {end_time - start_time:.1f} seconds")
+        log(summary_lines, f"Global MAE:  {mae:.3f} s")
+        log(summary_lines, f"Global RMSE: {rmse:.3f} s")
+        log(summary_lines, f"Time Taken:  {end_time - start_time:.1f} seconds")
 
     return results_df
