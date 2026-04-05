@@ -30,17 +30,15 @@ from catboost import CatBoostRegressor
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL
+from src.config import SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL, MIN_TRAIN_RACES, CV_N_SPLITS, CV_N_JOBS
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
 from src.modeling.analysis import plot_model_comparison
 
-N_SPLITS  = 5
-N_JOBS_CV = 1
 
 
 def make_objective(model_name, X, y):
-    tscv = TimeSeriesSplit(n_splits=N_SPLITS)
+    tscv = TimeSeriesSplit(n_splits=CV_N_SPLITS)
 
     def objective(trial):
         if model_name == "RandomForest":
@@ -84,7 +82,7 @@ def make_objective(model_name, X, y):
                 random_state=42, verbose=0,
             )
 
-        scores = cross_val_score(model, X, y, cv=tscv, scoring='neg_mean_absolute_error', n_jobs=N_JOBS_CV)
+        scores = cross_val_score(model, X, y, cv=tscv, scoring='neg_mean_absolute_error', n_jobs=CV_N_JOBS)
         return -scores.mean()
 
     return objective
@@ -144,7 +142,7 @@ if __name__ == "__main__":
         t1 = time.time()
         results = run_season_walk_forward(
             df, MODEL_FEATURES, model, summary_lines,
-            target='Target_Delta', min_train_races=20, print_progress=False
+            target='Target_Delta', min_train_races=MIN_TRAIN_RACES, print_progress=False
         )
         results = convert_deltas_to_absolute_times(results, df)
         wf_time = time.time() - t1

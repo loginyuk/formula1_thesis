@@ -87,3 +87,8 @@ TELEMETRY_FEATURES_TO_SHIFT = [
     'Mean_Speed_CV', 'Std_Speed_CV',
     'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
 ]
+
+# Walk-forward validation constants
+MIN_TRAIN_RACES = 20   # minimum races before first prediction
+CV_N_SPLITS     = 5    # TimeSeriesSplit folds for hyperparameter tuning
+CV_N_JOBS       = 1    # parallelism for CV

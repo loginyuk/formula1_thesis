@@ -25,7 +25,7 @@ from catboost import CatBoostRegressor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL
+from src.config import SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL, MIN_TRAIN_RACES
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
 from src.modeling.plots import plot_full_season_slopes
@@ -58,8 +58,6 @@ MODELS = {
         random_state=42, verbose=0
     ),
 }
-
-MIN_TRAIN_RACES = 20
 
 if __name__ == "__main__":
     start_all = time.time()

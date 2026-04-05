@@ -17,7 +17,7 @@ from xgboost import XGBRegressor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import SUMMARIES_DIR, MODEL_FEATURES, DATASET_ALL
+from src.config import SUMMARIES_DIR, MODEL_FEATURES, DATASET_ALL, MIN_TRAIN_RACES
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
 from src.modeling.analysis import plot_feature_importance
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     simulation_results = run_season_walk_forward(
         df, MODEL_FEATURES, model, summary_lines,
-        target='Target_Delta', min_train_races=20, print_progress=True
+        target='Target_Delta', min_train_races=MIN_TRAIN_RACES, print_progress=True
     )
     simulation_results = convert_deltas_to_absolute_times(simulation_results, df)
 
