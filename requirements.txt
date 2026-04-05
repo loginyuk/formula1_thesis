@@ -6,3 +6,6 @@ scikit-learn
 xgboost
 matplotlib
 seaborn
+optuna
+catboost
+lightgbm
