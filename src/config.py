@@ -92,3 +92,16 @@ TELEMETRY_FEATURES_TO_SHIFT = [
 MIN_TRAIN_RACES = 20   # minimum races before first prediction
 CV_N_SPLITS     = 5    # TimeSeriesSplit folds for hyperparameter tuning
 CV_N_JOBS       = 1    # parallelism for CV
+
+# Model choice
+# choices: "XGBoost", "LightGBM", "CatBoost", "RandomForest", "Ridge"
+PRIMARY_MODEL    = "LightGBM"
+BEST_PARAMS_FILE = os.path.join(RESULTS_DIR, "model", "best_params.json")
+
+MODEL_DEFAULTS = {
+    "XGBoost":      dict(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42, verbosity=0),
+    "LightGBM":     dict(n_estimators=100, max_depth=5, num_leaves=31, learning_rate=0.1, random_state=42, verbose=-1),
+    "CatBoost":     dict(iterations=100, depth=5, learning_rate=0.1, random_state=42, verbose=0),
+    "RandomForest": dict(n_estimators=100, max_features='sqrt', max_depth=15, random_state=42),
+    "Ridge":        dict(),
+}

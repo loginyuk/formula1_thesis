@@ -1,8 +1,9 @@
 """
 run_model_training.py
 ─────────────────────
-XGBoost walk-forward training on the full processed dataset.
-Telemetry features are shifted by 1 lap to remove data leakage (forecasting model).
+Walk-forward training using the primary model defined in config.py.
+Model and hyperparameters are loaded from best_params.json if available,
+otherwise falls back to sensible defaults.
 
 Run from project root:
     python scripts/run_model_training.py
@@ -10,32 +11,81 @@ Run from project root:
 
 import os
 import sys
+import json
 import time
 
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
+from catboost import CatBoostRegressor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import SUMMARIES_DIR, MODEL_FEATURES, DATASET_ALL, MIN_TRAIN_RACES
+from src.config import (
+    SUMMARIES_DIR, MODEL_FEATURES, DATASET_ALL,
+    MIN_TRAIN_RACES, PRIMARY_MODEL, BEST_PARAMS_FILE, MODEL_DEFAULTS,
+)
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features
 from src.modeling.analysis import plot_feature_importance
 from src.modeling.plots import plot_full_season_slopes
+
+
+def build_model(name, params):
+    if name == "XGBoost":
+        return XGBRegressor(**params, n_jobs=-1)
+    if name == "LightGBM":
+        return LGBMRegressor(**params, n_jobs=-1)
+    if name == "CatBoost":
+        return CatBoostRegressor(**params)
+    if name == "RandomForest":
+        return Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('model', RandomForestRegressor(**params, n_jobs=-1)),
+        ])
+    if name == "Ridge":
+        return Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
+            ('model', Ridge(**params)),
+        ])
+    raise ValueError(f"Unknown model: {name}")
+
 
 if __name__ == "__main__":
     start = time.time()
     summary_lines = []
     summary_path = os.path.join(SUMMARIES_DIR, "summary_model_training.txt")
 
-    df = pd.read_csv(DATASET_ALL)
+    # load best params if available
+    if os.path.exists(BEST_PARAMS_FILE):
+        with open(BEST_PARAMS_FILE) as f:
+            all_best = json.load(f)
+        if PRIMARY_MODEL in all_best:
+            params = all_best[PRIMARY_MODEL]
+            log(summary_lines, f"Loaded tuned params for {PRIMARY_MODEL} from {BEST_PARAMS_FILE}")
+        else:
+            params = MODEL_DEFAULTS[PRIMARY_MODEL]
+            log(summary_lines, f"No tuned params found for {PRIMARY_MODEL}, using defaults")
+    else:
+        params = MODEL_DEFAULTS[PRIMARY_MODEL]
+        log(summary_lines, f"best_params.json not found, using defaults for {PRIMARY_MODEL}")
 
+    log(summary_lines, f"Model: {PRIMARY_MODEL}")
+    log(summary_lines, f"Params: {params}\n")
+
+    model = build_model(PRIMARY_MODEL, params)
+
+    df = pd.read_csv(DATASET_ALL)
     df = shift_telemetry_features(df)
 
     log(summary_lines, f"Features used for training ({len(MODEL_FEATURES)}):")
     log(summary_lines, f"{MODEL_FEATURES}\n")
-
-    model = XGBRegressor(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42)
 
     simulation_results = run_season_walk_forward(
         df, MODEL_FEATURES, model, summary_lines,
@@ -46,4 +96,5 @@ if __name__ == "__main__":
     plot_feature_importance(df, MODEL_FEATURES)
     plot_full_season_slopes(simulation_results, 'VER')
 
+    log(summary_lines, f"\nTotal time: {time.time() - start:.1f} s")
     write_summary(summary_lines, summary_path)
