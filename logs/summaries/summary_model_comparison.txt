@@ -1,29 +1,5 @@
 
 ----------------------------------------
-Model: Ridge (default params)
-----------------------------------------
-Total races in dataset: 83
-Initial training on first 5 races
-
-  MAE:  1.962 s
-  RMSE: 11.461 s
-  R2:   -0.1669
-  MAPE: 2.09 %
-  Time: 35.6 s
-
-----------------------------------------
-Model: RandomForest (tuned params)
-----------------------------------------
-Total races in dataset: 83
-Initial training on first 5 races
-
-  MAE:  0.334 s
-  RMSE: 0.555 s
-  R2:   0.9973
-  MAPE: 0.38 %
-  Time: 968.8 s
-
-----------------------------------------
 Model: XGBoost (tuned params)
 ----------------------------------------
 Total races in dataset: 83
@@ -33,7 +9,7 @@ Initial training on first 5 races
   RMSE: 0.568 s
   R2:   0.9971
   MAPE: 0.38 %
-  Time: 21.9 s
+  Time: 30.5 s
 
 ----------------------------------------
 Model: LightGBM (tuned params)
@@ -45,7 +21,7 @@ Initial training on first 5 races
   RMSE: 0.554 s
   R2:   0.9973
   MAPE: 0.38 %
-  Time: 36.7 s
+  Time: 51.3 s
 
 ----------------------------------------
 Model: CatBoost (tuned params)
@@ -57,16 +33,14 @@ Initial training on first 5 races
   RMSE: 0.559 s
   R2:   0.9972
   MAPE: 0.39 %
-  Time: 92.3 s
+  Time: 112.6 s
 
 ----------------------------------------
 Final Comparison
 ----------------------------------------
-       Model      MAE      RMSE        R2     MAPE     Time_s
-    LightGBM 0.333027  0.554162  0.997272 0.379981  36.661649
-RandomForest 0.333888  0.555253  0.997261 0.380959 968.794591
-     XGBoost 0.336273  0.567901  0.997135 0.384149  21.872161
-    CatBoost 0.337399  0.559201  0.997222 0.385540  92.336179
-       Ridge 1.962204 11.461058 -0.166910 2.089493  35.573578
+   Model      MAE     RMSE       R2     MAPE     Time_s
+LightGBM 0.333027 0.554162 0.997272 0.379981  51.325517
+ XGBoost 0.336273 0.567901 0.997135 0.384149  30.508279
+CatBoost 0.337399 0.559201 0.997222 0.385540 112.593975
 
-Total time: 1228.1 s
+Total time: 254.5 s

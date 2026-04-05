@@ -31,10 +31,13 @@ from src.config import (
 )
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features, compute_metrics
-from src.modeling.plots import plot_full_season_slopes
-from src.modeling.analysis import plot_model_comparison
+from src.modeling.plots import (
+    plot_full_season_slopes, plot_predicted_vs_actual, plot_residual_analysis,
+    plot_per_race_mae, plot_compound_breakdown, plot_driver_mae,
+)
+from src.modeling.analysis import plot_feature_importance, plot_model_comparison
 
-MODELS_TO_COMPARE = ["Ridge", "RandomForest", "XGBoost", "LightGBM", "CatBoost"]
+MODELS_TO_COMPARE = ["XGBoost", "LightGBM", "CatBoost"]
 
 
 def build_model(name, params):
@@ -43,7 +46,7 @@ def build_model(name, params):
     if name == "LightGBM":
         return LGBMRegressor(**params, n_jobs=-1, verbose=-1)
     if name == "CatBoost":
-        return CatBoostRegressor(**params, verbose=0, silent=True)
+        return CatBoostRegressor(**params, silent=True)
     if name == "RandomForest":
         return Pipeline([
             ('imputer', SimpleImputer(strategy='median')),
@@ -105,7 +108,13 @@ if __name__ == "__main__":
         model_dir = os.path.join(RESULTS_MODEL_DIR, name)
         os.makedirs(model_dir, exist_ok=True)
         results.to_csv(os.path.join(model_dir, f"results_{name}.csv"), index=False)
+        plot_feature_importance(df, MODEL_FEATURES, model, out_dir=model_dir)
         plot_full_season_slopes(results, 'VER', out_dir=model_dir)
+        plot_predicted_vs_actual(results, out_dir=model_dir)
+        plot_residual_analysis(results, out_dir=model_dir)
+        plot_per_race_mae(results, out_dir=model_dir)
+        plot_compound_breakdown(results, out_dir=model_dir)
+        plot_driver_mae(results, out_dir=model_dir)
 
     log(summary_lines, f"\n{'-'*40}")
     log(summary_lines, "Final Comparison")

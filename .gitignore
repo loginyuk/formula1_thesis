@@ -8,8 +8,9 @@ test.py
 
 results/older
 results/clustering/2023_Silverstone/drivers/
-results/model/*/
 results/clustering/verification/
+
+races_degradations_VER.png
 
 logs/with_errors
 

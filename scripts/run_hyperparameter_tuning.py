@@ -155,10 +155,6 @@ if __name__ == "__main__":
 
         comparison_rows.append({'Model': f"{model_name} (tuned)", **metrics, 'Time_s': wf_time})
 
-        model_dir = os.path.join(RESULTS_MODEL_DIR, f"{model_name}_tuned")
-        os.makedirs(model_dir, exist_ok=True)
-        results.to_csv(os.path.join(model_dir, f"results_{model_name}_tuned.csv"), index=False)
-
     # save all best params
     params_path = os.path.join(RESULTS_MODEL_DIR, "best_params.json")
     with open(params_path, 'w') as f:

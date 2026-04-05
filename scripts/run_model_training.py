@@ -45,7 +45,7 @@ def build_model(name, params):
     if name == "LightGBM":
         return LGBMRegressor(**params, n_jobs=-1, verbose=-1)
     if name == "CatBoost":
-        return CatBoostRegressor(**params, verbose=0, silent=True)
+        return CatBoostRegressor(**params, silent=True)
     if name == "RandomForest":
         return Pipeline([
             ('imputer', SimpleImputer(strategy='median')),
