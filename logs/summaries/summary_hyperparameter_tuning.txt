@@ -2,97 +2,105 @@
 ---------------------------------------------
 Tuning: RandomForest (50 trials)
 ---------------------------------------------
-Tuning completed in 7644.5 s
-Best MAE: 0.3314 s
+Tuning completed in 12725.7 s
+Best MAE: 0.3317 s
 Best params: {
-  "n_estimators": 291,
-  "max_depth": 5,
-  "max_features": 0.7938340554615755,
-  "min_samples_leaf": 19
+  "n_estimators": 176,
+  "max_depth": 7,
+  "max_features": 0.7879944304289775,
+  "min_samples_leaf": 20
 }
 
 Final walk-forward validation with best params
 Total races in dataset: 83
-Initial training on first 20 races
+Initial training on first 5 races
 
-Walk-forward MAE:  0.334 s
-Walk-forward RMSE: 0.561 s
-Walk-forward time: 3112.7 s
+Walk-forward MAE:  0.335 s
+Walk-forward RMSE: 0.555 s
+Walk-forward R2:   0.9973
+Walk-forward MAPE: 0.38 %
+Walk-forward time: 1180.1 s
 
 ---------------------------------------------
 Tuning: XGBoost (50 trials)
 ---------------------------------------------
-Tuning completed in 229.1 s
-Best MAE: 0.3334 s
+Tuning completed in 237.4 s
+Best MAE: 0.3330 s
 Best params: {
-  "n_estimators": 75,
-  "max_depth": 4,
-  "learning_rate": 0.024478075980136977,
-  "subsample": 0.9429977616128864,
-  "colsample_bytree": 0.8994609664754406,
-  "min_child_weight": 7
+  "n_estimators": 89,
+  "max_depth": 6,
+  "learning_rate": 0.014176920211792994,
+  "subsample": 0.7680088732915615,
+  "colsample_bytree": 0.960256782704887,
+  "min_child_weight": 10
 }
 
 Final walk-forward validation with best params
 Total races in dataset: 83
-Initial training on first 20 races
+Initial training on first 5 races
 
-Walk-forward MAE:  0.337 s
-Walk-forward RMSE: 0.576 s
-Walk-forward time: 18.9 s
+Walk-forward MAE:  0.336 s
+Walk-forward RMSE: 0.561 s
+Walk-forward R2:   0.9972
+Walk-forward MAPE: 0.38 %
+Walk-forward time: 57.9 s
 
 ---------------------------------------------
 Tuning: LightGBM (50 trials)
 ---------------------------------------------
-Tuning completed in 2345.3 s
+Tuning completed in 230.9 s
 Best MAE: 0.3305 s
 Best params: {
-  "n_estimators": 126,
-  "max_depth": 4,
-  "num_leaves": 79,
-  "learning_rate": 0.012296526109646887,
-  "subsample": 0.8445892314271656,
-  "colsample_bytree": 0.9294257502019934,
-  "min_child_samples": 46
+  "n_estimators": 148,
+  "max_depth": 3,
+  "num_leaves": 116,
+  "learning_rate": 0.01558551535724406,
+  "subsample": 0.929594942194472,
+  "colsample_bytree": 0.8262522947815357,
+  "min_child_samples": 43
 }
 
 Final walk-forward validation with best params
 Total races in dataset: 83
-Initial training on first 20 races
+Initial training on first 5 races
 
-Walk-forward MAE:  0.333 s
-Walk-forward RMSE: 0.559 s
-Walk-forward time: 36.9 s
+Walk-forward MAE:  0.334 s
+Walk-forward RMSE: 0.555 s
+Walk-forward R2:   0.9973
+Walk-forward MAPE: 0.38 %
+Walk-forward time: 37.0 s
 
 ---------------------------------------------
 Tuning: CatBoost (50 trials)
 ---------------------------------------------
-Tuning completed in 1096.2 s
-Best MAE: 0.3339 s
+Tuning completed in 731.7 s
+Best MAE: 0.3342 s
 Best params: {
-  "iterations": 102,
+  "iterations": 138,
   "depth": 8,
-  "learning_rate": 0.025507499541836866,
-  "l2_leaf_reg": 8.186247469076214
+  "learning_rate": 0.012409834863532239,
+  "l2_leaf_reg": 8.891393336439348
 }
 
 Final walk-forward validation with best params
 Total races in dataset: 83
-Initial training on first 20 races
+Initial training on first 5 races
 
-Walk-forward MAE:  0.337 s
-Walk-forward RMSE: 0.563 s
-Walk-forward time: 44.8 s
+Walk-forward MAE:  0.339 s
+Walk-forward RMSE: 0.561 s
+Walk-forward R2:   0.9972
+Walk-forward MAPE: 0.39 %
+Walk-forward time: 650.5 s
 
 Best params saved to /Users/loginuha/programing/thesis/formula1_thesis/results/model/best_params.json
 
 --------------------------------------------------
 Tuned Model Comparison
 --------------------------------------------------
-               Model      MAE    RMSE      Time_s
-    LightGBM (tuned) 0.332994 0.55882   36.933281
-RandomForest (tuned) 0.334201 0.56071 3112.666614
-     XGBoost (tuned) 0.336661 0.57565   18.925813
-    CatBoost (tuned) 0.337486 0.56270   44.752420
+               Model      MAE     RMSE       R2     MAPE      Time_s
+    LightGBM (tuned) 0.333580 0.555016 0.997263 0.380682   37.028553
+RandomForest (tuned) 0.334650 0.554582 0.997268 0.381884 1180.132370
+     XGBoost (tuned) 0.336213 0.560511 0.997209 0.383915   57.921983
+    CatBoost (tuned) 0.338546 0.560977 0.997204 0.386777  650.515714
 
-Total time: 14530.2 s
+Total time: 15852.7 s
