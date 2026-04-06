@@ -1,0 +1,39 @@
+No clustering study — model: CatBoost (tuned params)
+17 removed features: 
+['Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio', 'Mean_Brake_Fraction', 'Std_Brake_Fraction', 'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm', 'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm', 'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm', 'Mean_Speed_CV', 'Std_Speed_CV', 'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy']
+Full feature set:    66 features
+Reduced feature set: 49 features
+
+
+----------------------------------------
+With clustering  (66 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+  MAE:  0.3382 s
+  RMSE: 0.5599 s
+  R2:   0.997216
+  MAPE: 0.386 %
+  Time: 67.3 s
+
+----------------------------------------
+Without clustering  (49 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+  MAE:  0.3373 s
+  RMSE: 0.5579 s
+  R2:   0.997235
+  MAPE: 0.385 %
+  Time: 52.1 s
+
+----------------------------------------
+Improvement from clustering features (negative = clustering helps)
+----------------------------------------
+ MAE:  -0.0009 s
+ RMSE: -0.0019 s
+ R2:   +0.000019
+
+Total time: 120.3 s
