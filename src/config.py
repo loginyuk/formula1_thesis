@@ -108,7 +108,7 @@ CV_N_JOBS       = 1    # parallelism for CV
 
 # Model choice
 # choices: "XGBoost", "LightGBM", "CatBoost", "RandomForest", "Ridge"
-PRIMARY_MODEL    = "CatBoost"
+PRIMARY_MODEL    = "LightGBM"
 BEST_PARAMS_FILE = os.path.join(RESULTS_DIR, "model", "best_params.json")
 
 MODEL_DEFAULTS = {
