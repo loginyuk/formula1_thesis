@@ -1,0 +1,37 @@
+Clustering ablation
+Model: RandomForest (tuned params)
+Features: 48
+17 removed features: ['Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio', 'Mean_Brake_Fraction', 'Std_Brake_Fraction', 'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm', 'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm', 'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm', 'Mean_Speed_Variability', 'Std_Speed_Variability', 'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy']
+
+----------------------------------------
+With clustering  (65 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.3349 s
+  RMSE: 0.5551 s
+  R2:   0.997256
+  MAPE: 0.382 %
+  Time: 293.5 s
+
+----------------------------------------
+Without clustering  (48 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.3345 s
+  RMSE: 0.5543 s
+  R2:   0.997263
+  MAPE: 0.381 %
+  Time: 163.4 s
+
+----------------------------------------
+Delta (with clustering - without clustering)
+----------------------------------------
+  MAE:  +0.0004 s
+  RMSE: +0.0007 s
+  R2:   -0.000007

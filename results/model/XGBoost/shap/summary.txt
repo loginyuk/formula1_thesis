@@ -1,0 +1,39 @@
+SHAP analysis
+
+Model: XGBoost (tuned params)
+Features: 65
+Races: 83  (initial train: 5)
+
+Top 20 features by mean |SHAP|:
+                  Feature  Mean_Abs_SHAP
+               Prev_Delta       0.093272
+                LapNumber       0.016517
+                 Position       0.015180
+     Asphalt_Abrasion_1_5       0.010013
+             Prev_LapTime       0.009932
+                 FuelLoad       0.008952
+                 Humidity       0.006447
+ Cumulative_Field_Dist_KM       0.005470
+               Lap_Damage       0.003795
+Tyre_Compound_Interaction       0.003009
+            Rolling_Avg_3       0.002658
+               Energy_Lap       0.002576
+                    Lag_2       0.002500
+          Track_Evolution       0.002206
+                 TyreLife       0.002169
+                    Stint       0.001771
+          Tyre_Stress_1_5       0.001577
+                TrackTemp       0.001519
+      Wear_Severity_Index       0.001485
+                  AirTemp       0.001375
+
+By lag bucket:
+   Bucket  Total_Abs_SHAP  Mean_Abs_SHAP  N_Features
+    Lag-1        0.103204       0.051602           2
+   Static        0.086609       0.002475          35
+Telemetry        0.008404       0.000934           9
+  Cluster        0.006333       0.000373          17
+Rolling-3        0.002658       0.002658           1
+    Lag-2        0.002500       0.002500           1
+
+Total time: 39.4 s

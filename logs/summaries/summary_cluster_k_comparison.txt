@@ -1,0 +1,33 @@
+Cluster K Comparison
+
+K values: [2, 3, 4, 5]
+
+Data: 57232 laps
+Features: ['Z_Mean_Apex_Speed_Ratio', 'Z_Mean_Throttle_On_Dist_Norm', 'Z_Mean_Throttle_Integral_Norm']
+
+
+Centroid values per K:
+
+K=2:
+  C0: Apex_Speed_Ratio=+0.081, Throttle_On_Dist_Norm=-0.347, Throttle_Integral_Norm=+0.448
+  C1: Apex_Speed_Ratio=-0.020, Throttle_On_Dist_Norm=+0.493, Throttle_Integral_Norm=-0.559
+
+K=3:
+  C0: Apex_Speed_Ratio=-0.390, Throttle_On_Dist_Norm=-0.396, Throttle_Integral_Norm=+0.289
+  C1: Apex_Speed_Ratio=+0.777, Throttle_On_Dist_Norm=-0.059, Throttle_Integral_Norm=+0.472
+  C2: Apex_Speed_Ratio=-0.243, Throttle_On_Dist_Norm=+0.518, Throttle_Integral_Norm=-0.718
+
+K=4:
+  C0: Apex_Speed_Ratio=+0.764, Throttle_On_Dist_Norm=-0.672, Throttle_Integral_Norm=+0.819
+  C1: Apex_Speed_Ratio=-0.445, Throttle_On_Dist_Norm=-0.420, Throttle_Integral_Norm=+0.268
+  C2: Apex_Speed_Ratio=+0.561, Throttle_On_Dist_Norm=+0.423, Throttle_Integral_Norm=+0.092
+  C3: Apex_Speed_Ratio=-0.299, Throttle_On_Dist_Norm=+0.558, Throttle_Integral_Norm=-0.849
+
+K=5:
+  C0: Apex_Speed_Ratio=+0.796, Throttle_On_Dist_Norm=-0.703, Throttle_Integral_Norm=+0.787
+  C1: Apex_Speed_Ratio=-0.571, Throttle_On_Dist_Norm=-0.469, Throttle_Integral_Norm=+0.375
+  C2: Apex_Speed_Ratio=+0.639, Throttle_On_Dist_Norm=+0.355, Throttle_Integral_Norm=+0.133
+  C3: Apex_Speed_Ratio=-0.336, Throttle_On_Dist_Norm=+0.188, Throttle_Integral_Norm=-0.614
+  C4: Apex_Speed_Ratio=-0.099, Throttle_On_Dist_Norm=+1.465, Throttle_Integral_Norm=-1.043
+
+Total time: 42.8 s

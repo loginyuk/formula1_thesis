@@ -1,0 +1,32 @@
+Session: British Grand Prix 2023
+Data: 822 laps, 14796 corners, 20 drivers
+
+Feature ranges after normalisation:
+     Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+min                    -3.00                         -1.64                          -3.00
+max                     3.00                          3.00                           3.00
+std                     0.84                          0.67                           0.79
+
+Fitting GMM with k=3 clusters
+
+Cluster distribution:
+Style_Cluster_ID
+0    397
+1    386
+2     39
+
+Cluster centroids (Z-scored features):
+                  Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                      
+0                                   0.082                        -0.505                          0.212
+1                                  -0.188                         0.479                         -0.175
+2                                   0.084                         0.788                         -0.883
+
+Cluster centroids (raw feature means):
+                  Mean_Apex_Speed_Ratio  Mean_Throttle_On_Dist_Norm  Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                
+0                                0.8527                      0.1452                       0.6892
+1                                0.8464                      0.2238                       0.6701
+2                                0.8537                      0.2491                       0.6310
+
+Clustering completed in 19.70 seconds

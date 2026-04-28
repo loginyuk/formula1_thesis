@@ -1,0 +1,31 @@
+{
+  "RandomForest": {
+    "n_estimators": 122,
+    "max_depth": 6,
+    "max_features": 0.5629354271597612,
+    "min_samples_leaf": 20
+  },
+  "XGBoost": {
+    "n_estimators": 224,
+    "max_depth": 3,
+    "learning_rate": 0.01199412536949907,
+    "subsample": 0.6845606722266367,
+    "colsample_bytree": 0.6331338186209721,
+    "min_child_weight": 8
+  },
+  "LightGBM": {
+    "n_estimators": 203,
+    "max_depth": 4,
+    "num_leaves": 91,
+    "learning_rate": 0.010218568520728959,
+    "subsample": 0.602437957970694,
+    "colsample_bytree": 0.9025744423164739,
+    "min_child_samples": 44
+  },
+  "CatBoost": {
+    "iterations": 100,
+    "depth": 7,
+    "learning_rate": 0.01673674686605113,
+    "l2_leaf_reg": 9.183657973358791
+  }
+}

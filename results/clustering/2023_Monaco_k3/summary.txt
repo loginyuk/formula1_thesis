@@ -1,0 +1,32 @@
+Session: Monaco Grand Prix 2023
+Data: 1259 laps, 23921 corners, 20 drivers
+
+Feature ranges after normalisation:
+     Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+min                    -3.00                         -1.84                          -2.94
+max                     2.77                          2.56                           1.32
+std                     0.75                          0.73                           0.84
+
+Fitting GMM with k=3 clusters
+
+Cluster distribution:
+Style_Cluster_ID
+1    553
+0    406
+2    300
+
+Cluster centroids (Z-scored features):
+                  Z_Mean_Apex_Speed_Ratio  Z_Mean_Throttle_On_Dist_Norm  Z_Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                      
+0                                  -0.332                        -0.434                          0.213
+1                                   0.334                         0.276                          0.155
+2                                  -0.243                         0.494                         -1.422
+
+Cluster centroids (raw feature means):
+                  Mean_Apex_Speed_Ratio  Mean_Throttle_On_Dist_Norm  Mean_Throttle_Integral_Norm
+Style_Cluster_ID                                                                                
+0                                0.6889                      0.2101                       0.4592
+1                                0.7083                      0.2540                       0.4552
+2                                0.6915                      0.2674                       0.3455
+
+Clustering completed in 25.75 seconds

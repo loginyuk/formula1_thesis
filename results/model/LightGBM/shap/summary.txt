@@ -1,0 +1,39 @@
+SHAP analysis
+
+Model: LightGBM (tuned params)
+Features: 65
+Races: 83  (initial train: 5)
+
+Top 20 features by mean |SHAP|:
+                  Feature  Mean_Abs_SHAP
+               Prev_Delta       0.097167
+                 Position       0.018703
+                LapNumber       0.011525
+     Asphalt_Abrasion_1_5       0.011218
+                 FuelLoad       0.006640
+                 Humidity       0.006102
+             Prev_LapTime       0.005887
+ Cumulative_Field_Dist_KM       0.004698
+                 TyreLife       0.003150
+               Lap_Damage       0.003090
+          Tyre_Stress_1_5       0.002412
+                    Lag_2       0.002150
+               Energy_Lap       0.001529
+                TrackTemp       0.001358
+                 Pressure       0.001354
+            Downforce_1_5       0.001354
+          Track_Evolution       0.001250
+Tyre_Compound_Interaction       0.001108
+      Wear_Severity_Index       0.001011
+   Mean_Speed_Variability       0.000981
+
+By lag bucket:
+   Bucket  Total_Abs_SHAP  Mean_Abs_SHAP  N_Features
+    Lag-1        0.103054       0.051527           2
+   Static        0.079962       0.002285          35
+Telemetry        0.006461       0.000718           9
+  Cluster        0.006258       0.000368          17
+    Lag-2        0.002150       0.002150           1
+Rolling-3        0.000637       0.000637           1
+
+Total time: 56.4 s

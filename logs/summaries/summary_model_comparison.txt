@@ -1,3 +1,17 @@
+Model Comparison
+
+----------------------------------------
+Model: RandomForest (tuned params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.335 s
+  RMSE: 0.557 s
+  R2:   0.9972
+  MAPE: 0.38 %
+  Time: 294.0 s
 
 ----------------------------------------
 Model: XGBoost (tuned params)
@@ -5,11 +19,12 @@ Model: XGBoost (tuned params)
 Total races in dataset: 83
 Initial training on first 5 races
 
-  MAE:  0.336 s
-  RMSE: 0.568 s
-  R2:   0.9971
+Metrics:
+  MAE:  0.337 s
+  RMSE: 0.564 s
+  R2:   0.9972
   MAPE: 0.38 %
-  Time: 30.5 s
+  Time: 33.6 s
 
 ----------------------------------------
 Model: LightGBM (tuned params)
@@ -17,11 +32,12 @@ Model: LightGBM (tuned params)
 Total races in dataset: 83
 Initial training on first 5 races
 
+Metrics:
   MAE:  0.333 s
-  RMSE: 0.554 s
+  RMSE: 0.555 s
   R2:   0.9973
   MAPE: 0.38 %
-  Time: 51.3 s
+  Time: 50.8 s
 
 ----------------------------------------
 Model: CatBoost (tuned params)
@@ -29,18 +45,34 @@ Model: CatBoost (tuned params)
 Total races in dataset: 83
 Initial training on first 5 races
 
-  MAE:  0.337 s
-  RMSE: 0.559 s
+Metrics:
+  MAE:  0.338 s
+  RMSE: 0.561 s
   R2:   0.9972
   MAPE: 0.39 %
-  Time: 112.6 s
+  Time: 37.9 s
 
 ----------------------------------------
-Final Comparison
+Model: Ridge (default params)
 ----------------------------------------
-   Model      MAE     RMSE       R2     MAPE     Time_s
-LightGBM 0.333027 0.554162 0.997272 0.379981  51.325517
- XGBoost 0.336273 0.567901 0.997135 0.384149  30.508279
-CatBoost 0.337399 0.559201 0.997222 0.385540 112.593975
+Total races in dataset: 83
+Initial training on first 5 races
 
-Total time: 254.5 s
+Metrics:
+  MAE:  1.924 s
+  RMSE: 11.012 s
+  R2:   -0.0799
+  MAPE: 2.05 %
+  Time: 21.3 s
+
+----------------------------------------
+Summary:
+----------------------------------------
+       Model      MAE      RMSE        R2     MAPE     Time_s
+    LightGBM 0.333498  0.554813  0.997259 0.380489  50.752856
+RandomForest 0.335291  0.556556  0.997241 0.382624 294.030732
+     XGBoost 0.336791  0.564043  0.997167 0.384476  33.568779
+    CatBoost 0.338001  0.560796  0.997199 0.386066  37.859782
+       Ridge 1.924280 11.011833 -0.079909 2.053156  21.319681
+
+Total time: 489.5 s

@@ -1,0 +1,37 @@
+Clustering ablation
+Model: LightGBM (tuned params)
+Features: 48
+17 removed features: ['Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio', 'Mean_Brake_Fraction', 'Std_Brake_Fraction', 'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm', 'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm', 'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm', 'Mean_Speed_Variability', 'Std_Speed_Variability', 'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy']
+
+----------------------------------------
+With clustering  (65 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.3335 s
+  RMSE: 0.5548 s
+  R2:   0.997259
+  MAPE: 0.380 %
+  Time: 48.8 s
+
+----------------------------------------
+Without clustering  (48 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.3333 s
+  RMSE: 0.5546 s
+  R2:   0.997261
+  MAPE: 0.380 %
+  Time: 43.7 s
+
+----------------------------------------
+Delta (with clustering - without clustering)
+----------------------------------------
+  MAE:  +0.0002 s
+  RMSE: +0.0002 s
+  R2:   -0.000002

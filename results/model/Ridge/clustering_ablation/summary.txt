@@ -1,0 +1,37 @@
+Clustering ablation
+Model: Ridge (default params)
+Features: 48
+17 removed features: ['Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio', 'Mean_Brake_Fraction', 'Std_Brake_Fraction', 'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm', 'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm', 'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm', 'Mean_Speed_Variability', 'Std_Speed_Variability', 'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy']
+
+----------------------------------------
+With clustering  (65 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  1.9243 s
+  RMSE: 11.0118 s
+  R2:   -0.079909
+  MAPE: 2.053 %
+  Time: 28.7 s
+
+----------------------------------------
+Without clustering  (48 features)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  1.8369 s
+  RMSE: 9.9500 s
+  R2:   0.118309
+  MAPE: 1.972 %
+  Time: 9.0 s
+
+----------------------------------------
+Delta (with clustering - without clustering)
+----------------------------------------
+  MAE:  +0.0874 s
+  RMSE: +1.0618 s
+  R2:   -0.198218

@@ -1,0 +1,88 @@
+Model Comparison (K=2 cluster features)
+
+----------------------------------------
+Model: RandomForest (tuned params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.335 s
+  RMSE: 0.556 s
+  R2:   0.9972
+  MAPE: 0.38 %
+  Time: 270.1 s
+
+----------------------------------------
+Model: XGBoost (tuned params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.337 s
+  RMSE: 0.565 s
+  R2:   0.9972
+  MAPE: 0.39 %
+  Time: 34.2 s
+
+----------------------------------------
+Model: LightGBM (tuned params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.334 s
+  RMSE: 0.555 s
+  R2:   0.9973
+  MAPE: 0.38 %
+  Time: 49.8 s
+
+----------------------------------------
+Model: CatBoost (tuned params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  0.338 s
+  RMSE: 0.560 s
+  R2:   0.9972
+  MAPE: 0.39 %
+  Time: 33.1 s
+
+----------------------------------------
+Model: Ridge (default params)
+----------------------------------------
+Total races in dataset: 83
+Initial training on first 5 races
+
+Metrics:
+  MAE:  1.923 s
+  RMSE: 10.977 s
+  R2:   -0.0730
+  MAPE: 2.05 %
+  Time: 24.6 s
+
+----------------------------------------
+K=2 Summary:
+----------------------------------------
+       Model      MAE      RMSE        R2     MAPE     Time_s
+    LightGBM 0.333580  0.554997  0.997257 0.380602  49.845003
+RandomForest 0.335316  0.556320  0.997244 0.382590 270.078820
+     XGBoost 0.337323  0.565122  0.997156 0.385075  34.209434
+    CatBoost 0.337596  0.560053  0.997207 0.385572  33.121636
+       Ridge 1.922762 10.976586 -0.073007 2.052007  24.636974
+
+----------------------------------------
+K=2 vs K=3 delta (K=3 - K=2):
+----------------------------------------
+       Model  MAE_k3  MAE_k2  MAE_delta  RMSE_k3  RMSE_k2  RMSE_delta     R2_k3     R2_k2  R2_delta
+    LightGBM  0.3335  0.3336    -0.0001   0.5548   0.5550     -0.0002  0.997259  0.997257 -0.000002
+RandomForest  0.3353  0.3353    -0.0000   0.5566   0.5563      0.0002  0.997241  0.997244  0.000002
+     XGBoost  0.3368  0.3373    -0.0005   0.5640   0.5651     -0.0011  0.997167  0.997156 -0.000011
+    CatBoost  0.3380  0.3376     0.0004   0.5608   0.5601      0.0007  0.997199  0.997207  0.000007
+       Ridge  1.9243  1.9228     0.0015  11.0118  10.9766      0.0352 -0.079909 -0.073007  0.006902
+
+Total time: 461.4 s

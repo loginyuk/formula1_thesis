@@ -1,0 +1,97 @@
+Model: XGBoost (tuned params)
+Params: {'n_estimators': 224, 'max_depth': 3, 'learning_rate': 0.01199412536949907, 'subsample': 0.6845606722266367, 'colsample_bytree': 0.6331338186209721, 'min_child_weight': 8}
+
+Features (65): ['LapNumber', 'Stint', 'TyreLife', 'Position', 'AirTemp', 'Humidity', 'Pressure', 'TrackTemp', 'WindDirection', 'WindSpeed', 'FuelLoad', 'Track_Evolution', 'Cumulative_Field_Dist_KM', 'Lap_Damage', 'LatOffset_Mean', 'Accumulated_Tyre_Wear', 'LatOffset_Std', 'Energy_Lap', 'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'Aero_Loss', 'DRS_Fraction', 'Traction_1_5', 'Asphalt_Grip_1_5', 'Asphalt_Abrasion_1_5', 'Track_Evolution_1_5', 'Tyre_Stress_1_5', 'Braking_1_5', 'Lateral_1_5', 'Downforce_1_5', 'Min_Pressure_Front_PSI', 'Min_Pressure_Rear_PSI', 'Circuit_Length_KM', 'Compound_Int', 'Wear_Severity_Index', 'Track_Flow_Type', 'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta', 'Prev_LapTime', 'Lag_2', 'Rolling_Avg_3', 'Prev_Delta', 'Driver_Encoded', 'Location_Encoded', 'Team_Encoded', 'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio', 'Mean_Brake_Fraction', 'Std_Brake_Fraction', 'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm', 'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm', 'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm', 'Mean_Speed_Variability', 'Std_Speed_Variability', 'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy', 'Year', 'Tyre_Compound_Interaction']
+Total races in dataset: 83
+Initial training on first 5 races
+
+Tested on 2022_Barcelona | Train size: 2675 laps | MAE: 0.431 s
+Tested on 2022_Baku | Train size: 3376 laps | MAE: 0.360 s
+Tested on 2022_Montréal | Train size: 3868 laps | MAE: 0.295 s
+Tested on 2022_Silverstone | Train size: 4601 laps | MAE: 0.281 s
+Tested on 2022_Spielberg | Train size: 4993 laps | MAE: 0.305 s
+Tested on 2022_Le Castellet | Train size: 5513 laps | MAE: 0.297 s
+Tested on 2022_Spa-Francorchamps | Train size: 5988 laps | MAE: 0.526 s
+Tested on 2022_Zandvoort | Train size: 6426 laps | MAE: 0.285 s
+Tested on 2022_Monza | Train size: 7097 laps | MAE: 0.283 s
+Tested on 2022_Marina Bay | Train size: 7610 laps | MAE: 0.739 s
+Tested on 2022_Austin | Train size: 7826 laps | MAE: 0.423 s
+Tested on 2022_Mexico City | Train size: 8315 laps | MAE: 0.335 s
+Tested on 2022_São Paulo | Train size: 9397 laps | MAE: 0.242 s
+Tested on 2022_Yas Island | Train size: 10053 laps | MAE: 0.314 s
+Tested on 2023_Sakhir | Train size: 10795 laps | MAE: 0.237 s
+Tested on 2023_Jeddah | Train size: 11380 laps | MAE: 0.311 s
+Tested on 2023_Melbourne | Train size: 12026 laps | MAE: 0.351 s
+Tested on 2023_Baku | Train size: 12590 laps | MAE: 0.263 s
+Tested on 2023_Miami | Train size: 13159 laps | MAE: 0.310 s
+Tested on 2023_Monaco | Train size: 14097 laps | MAE: 0.612 s
+Tested on 2023_Barcelona | Train size: 14830 laps | MAE: 0.332 s
+Tested on 2023_Montréal | Train size: 15797 laps | MAE: 0.236 s
+Tested on 2023_Spielberg | Train size: 16506 laps | MAE: 0.284 s
+Tested on 2023_Silverstone | Train size: 17276 laps | MAE: 0.260 s
+Tested on 2023_Budapest | Train size: 17882 laps | MAE: 0.312 s
+Tested on 2023_Spa-Francorchamps | Train size: 18755 laps | MAE: 0.446 s
+Tested on 2023_Monza | Train size: 18902 laps | MAE: 0.270 s
+Tested on 2023_Marina Bay | Train size: 19603 laps | MAE: 0.420 s
+Tested on 2023_Suzuka | Train size: 20145 laps | MAE: 0.327 s
+Tested on 2023_Lusail | Train size: 20600 laps | MAE: 0.386 s
+Tested on 2023_Austin | Train size: 20995 laps | MAE: 0.352 s
+Tested on 2023_Mexico City | Train size: 21643 laps | MAE: 0.305 s
+Tested on 2023_São Paulo | Train size: 22338 laps | MAE: 0.267 s
+Tested on 2023_Las Vegas | Train size: 23124 laps | MAE: 0.435 s
+Tested on 2023_Yas Island | Train size: 23414 laps | MAE: 0.274 s
+Tested on 2024_Sakhir | Train size: 24223 laps | MAE: 0.243 s
+Tested on 2024_Jeddah | Train size: 24952 laps | MAE: 0.329 s
+Tested on 2024_Melbourne | Train size: 25583 laps | MAE: 0.308 s
+Tested on 2024_Suzuka | Train size: 26215 laps | MAE: 0.423 s
+Tested on 2024_Shanghai | Train size: 26711 laps | MAE: 0.245 s
+Tested on 2024_Miami | Train size: 27233 laps | MAE: 0.280 s
+Tested on 2024_Imola | Train size: 27925 laps | MAE: 0.350 s
+Tested on 2024_Monaco | Train size: 28906 laps | MAE: 0.832 s
+Tested on 2024_Spielberg | Train size: 29939 laps | MAE: 0.277 s
+Tested on 2024_Silverstone | Train size: 30899 laps | MAE: 0.376 s
+Tested on 2024_Budapest | Train size: 31154 laps | MAE: 0.369 s
+Tested on 2024_Spa-Francorchamps | Train size: 32117 laps | MAE: 0.312 s
+Tested on 2024_Zandvoort | Train size: 32619 laps | MAE: 0.330 s
+Tested on 2024_Monza | Train size: 33813 laps | MAE: 0.328 s
+Tested on 2024_Baku | Train size: 34554 laps | MAE: 0.388 s
+Tested on 2024_Marina Bay | Train size: 35247 laps | MAE: 0.389 s
+Tested on 2024_Austin | Train size: 36192 laps | MAE: 0.343 s
+Tested on 2024_Mexico City | Train size: 36763 laps | MAE: 0.334 s
+Tested on 2024_Las Vegas | Train size: 37669 laps | MAE: 0.448 s
+Tested on 2024_Lusail | Train size: 38304 laps | MAE: 0.283 s
+Tested on 2024_Yas Island | Train size: 38771 laps | MAE: 0.273 s
+Tested on 2025_Shanghai | Train size: 39402 laps | MAE: 0.304 s
+Tested on 2025_Suzuka | Train size: 40139 laps | MAE: 0.248 s
+Tested on 2025_Sakhir | Train size: 40986 laps | MAE: 0.290 s
+Tested on 2025_Jeddah | Train size: 41690 laps | MAE: 0.308 s
+Tested on 2025_Imola | Train size: 42344 laps | MAE: 0.309 s
+Tested on 2025_Monaco | Train size: 43061 laps | MAE: 0.650 s
+Tested on 2025_Barcelona | Train size: 43919 laps | MAE: 0.346 s
+Tested on 2025_Montréal | Train size: 44645 laps | MAE: 0.316 s
+Tested on 2025_Spielberg | Train size: 45595 laps | MAE: 0.308 s
+Tested on 2025_Silverstone | Train size: 46372 laps | MAE: 0.574 s
+Tested on 2025_Spa-Francorchamps | Train size: 46443 laps | MAE: 0.264 s
+Tested on 2025_Budapest | Train size: 46894 laps | MAE: 0.319 s
+Tested on 2025_Zandvoort | Train size: 47987 laps | MAE: 0.223 s
+Tested on 2025_Monza | Train size: 48651 laps | MAE: 0.221 s
+Tested on 2025_Baku | Train size: 49329 laps | MAE: 0.313 s
+Tested on 2025_Marina Bay | Train size: 49923 laps | MAE: 0.437 s
+Tested on 2025_Austin | Train size: 50762 laps | MAE: 0.288 s
+Tested on 2025_Mexico City | Train size: 51403 laps | MAE: 0.299 s
+Tested on 2025_São Paulo | Train size: 52285 laps | MAE: 0.266 s
+Tested on 2025_Las Vegas | Train size: 53141 laps | MAE: 0.286 s
+Tested on 2025_Lusail | Train size: 53746 laps | MAE: 0.245 s
+Tested on 2025_Yas Island | Train size: 54410 laps | MAE: 0.285 s
+
+------------------------------
+Total Test Laps Predicted: 52553
+Walk-forward validation time: 36.0 seconds
+
+Metrics:
+MAE:  0.337 s
+RMSE: 0.564 s
+R2:   0.9972
+MAPE: 0.38 %
+
+Total time: 47.4 s

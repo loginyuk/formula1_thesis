@@ -1,0 +1,757 @@
+Data pipeline
+
+
+-------------------------------------------------------
+2022 - Sakhir
+
+Total Laps: 1125
+Valid Dry Laps: 1125
+Clean Green Laps: 874
+Final Laps with History: 617
+
+-------------------------------------------------------
+2022 - Jeddah
+
+Total Laps: 820
+Valid Dry Laps: 820
+Clean Green Laps: 606
+Final Laps with History: 428
+
+-------------------------------------------------------
+2022 - Melbourne
+
+Total Laps: 1045
+Valid Dry Laps: 1045
+Clean Green Laps: 814
+Final Laps with History: 612
+
+-------------------------------------------------------
+2022 - Imola
+
+Total Laps: 803
+Valid Dry Laps: 803
+Clean Green Laps: 728
+Final Laps with History: 555
+
+-------------------------------------------------------
+2022 - Miami
+
+Total Laps: 1057
+Valid Dry Laps: 1057
+Clean Green Laps: 820
+Final Laps with History: 577
+
+-------------------------------------------------------
+2022 - Barcelona
+
+Total Laps: 1230
+Valid Dry Laps: 1230
+Clean Green Laps: 1046
+Final Laps with History: 746
+
+-------------------------------------------------------
+2022 - Monaco
+
+Rain detected at 0 days 02:16:45.583000. Dropped all subsequent laps.
+Total Laps: 746
+Valid Dry Laps: 3
+Clean Green Laps: 1
+Final Laps with History: 0
+
+-------------------------------------------------------
+2022 - Baku
+
+Total Laps: 891
+Valid Dry Laps: 891
+Clean Green Laps: 755
+Final Laps with History: 530
+
+-------------------------------------------------------
+2022 - Montréal
+
+Total Laps: 1264
+Valid Dry Laps: 1264
+Clean Green Laps: 1020
+Final Laps with History: 766
+
+-------------------------------------------------------
+2022 - Silverstone
+
+Total Laps: 815
+Valid Dry Laps: 815
+Clean Green Laps: 648
+Final Laps with History: 436
+
+-------------------------------------------------------
+2022 - Spielberg
+
+Total Laps: 1025
+Valid Dry Laps: 1025
+Clean Green Laps: 854
+Final Laps with History: 592
+
+-------------------------------------------------------
+2022 - Le Castellet
+
+Total Laps: 958
+Valid Dry Laps: 958
+Clean Green Laps: 780
+Final Laps with History: 519
+
+-------------------------------------------------------
+2022 - Budapest
+
+Rain detected at 0 days 01:03:34.429000. Dropped all subsequent laps.
+Total Laps: 1383
+Valid Dry Laps: 0
+Clean Green Laps: 0
+Final Laps with History: 0
+
+-------------------------------------------------------
+2022 - Spa-Francorchamps
+
+Total Laps: 792
+Valid Dry Laps: 792
+Clean Green Laps: 624
+Final Laps with History: 459
+
+-------------------------------------------------------
+2022 - Zandvoort
+
+Total Laps: 1392
+Valid Dry Laps: 1392
+Clean Green Laps: 1062
+Final Laps with History: 725
+
+-------------------------------------------------------
+2022 - Monza
+
+Total Laps: 971
+Valid Dry Laps: 971
+Clean Green Laps: 756
+Final Laps with History: 562
+
+-------------------------------------------------------
+2022 - Marina Bay
+
+Total Laps: 357
+Valid Dry Laps: 357
+Clean Green Laps: 275
+Final Laps with History: 222
+
+-------------------------------------------------------
+2022 - Suzuka
+
+Total Laps: 0
+Valid Dry Laps: 0
+Clean Green Laps: 0
+Final Laps with History: 0
+
+-------------------------------------------------------
+2022 - Austin
+
+Total Laps: 992
+Valid Dry Laps: 992
+Clean Green Laps: 743
+Final Laps with History: 519
+
+-------------------------------------------------------
+2022 - Mexico City
+
+Total Laps: 1379
+Valid Dry Laps: 1379
+Clean Green Laps: 1296
+Final Laps with History: 1110
+
+-------------------------------------------------------
+2022 - São Paulo
+
+Total Laps: 1259
+Valid Dry Laps: 1259
+Clean Green Laps: 904
+Final Laps with History: 693
+
+-------------------------------------------------------
+2022 - Yas Island
+
+Total Laps: 1117
+Valid Dry Laps: 1117
+Clean Green Laps: 1014
+Final Laps with History: 776
+
+-------------------------------------------------------
+2023 - Sakhir
+
+Total Laps: 1056
+Valid Dry Laps: 1056
+Clean Green Laps: 872
+Final Laps with History: 612
+
+-------------------------------------------------------
+2023 - Jeddah
+
+Total Laps: 943
+Valid Dry Laps: 943
+Clean Green Laps: 828
+Final Laps with History: 661
+
+-------------------------------------------------------
+2023 - Melbourne
+
+Total Laps: 1003
+Valid Dry Laps: 1003
+Clean Green Laps: 755
+Final Laps with History: 584
+
+-------------------------------------------------------
+2023 - Baku
+
+Total Laps: 962
+Valid Dry Laps: 962
+Clean Green Laps: 803
+Final Laps with History: 577
+
+-------------------------------------------------------
+2023 - Miami
+
+Total Laps: 1138
+Valid Dry Laps: 1138
+Clean Green Laps: 1091
+Final Laps with History: 952
+
+-------------------------------------------------------
+2023 - Monaco
+
+Rain detected at 0 days 02:11:45.645000. Dropped all subsequent laps.
+Total Laps: 1071
+Valid Dry Laps: 1041
+Clean Green Laps: 931
+Final Laps with History: 755
+
+-------------------------------------------------------
+2023 - Barcelona
+
+Total Laps: 1312
+Valid Dry Laps: 1312
+Clean Green Laps: 1215
+Final Laps with History: 1003
+
+-------------------------------------------------------
+2023 - Montréal
+
+Total Laps: 1282
+Valid Dry Laps: 1282
+Clean Green Laps: 1050
+Final Laps with History: 734
+
+-------------------------------------------------------
+2023 - Spielberg
+
+Total Laps: 1354
+Valid Dry Laps: 1354
+Clean Green Laps: 1087
+Final Laps with History: 822
+
+-------------------------------------------------------
+2023 - Silverstone
+
+Total Laps: 971
+Valid Dry Laps: 971
+Clean Green Laps: 807
+Final Laps with History: 636
+
+-------------------------------------------------------
+2023 - Budapest
+
+Total Laps: 1252
+Valid Dry Laps: 1252
+Clean Green Laps: 1124
+Final Laps with History: 888
+
+-------------------------------------------------------
+2023 - Spa-Francorchamps
+
+Rain detected at 0 days 01:39:23.932000. Dropped all subsequent laps.
+Total Laps: 816
+Valid Dry Laps: 356
+Clean Green Laps: 278
+Final Laps with History: 159
+
+-------------------------------------------------------
+2023 - Zandvoort
+
+Rain detected at 0 days 01:03:46.980000. Dropped all subsequent laps.
+Total Laps: 1015
+Valid Dry Laps: 15
+Clean Green Laps: 13
+Final Laps with History: 0
+
+-------------------------------------------------------
+2023 - Monza
+
+Total Laps: 958
+Valid Dry Laps: 958
+Clean Green Laps: 883
+Final Laps with History: 718
+
+-------------------------------------------------------
+2023 - Marina Bay
+
+Total Laps: 1088
+Valid Dry Laps: 1088
+Clean Green Laps: 829
+Final Laps with History: 561
+
+-------------------------------------------------------
+2023 - Suzuka
+
+Total Laps: 880
+Valid Dry Laps: 880
+Clean Green Laps: 673
+Final Laps with History: 466
+
+-------------------------------------------------------
+2023 - Lusail
+
+Total Laps: 1006
+Valid Dry Laps: 1006
+Clean Green Laps: 760
+Final Laps with History: 435
+
+-------------------------------------------------------
+2023 - Austin
+
+Total Laps: 1014
+Valid Dry Laps: 1014
+Clean Green Laps: 897
+Final Laps with History: 680
+
+-------------------------------------------------------
+2023 - Mexico City
+
+Total Laps: 1282
+Valid Dry Laps: 1282
+Clean Green Laps: 1066
+Final Laps with History: 721
+
+-------------------------------------------------------
+2023 - São Paulo
+
+Total Laps: 1109
+Valid Dry Laps: 1109
+Clean Green Laps: 986
+Final Laps with History: 836
+
+-------------------------------------------------------
+2023 - Las Vegas
+
+Total Laps: 946
+Valid Dry Laps: 946
+Clean Green Laps: 639
+Final Laps with History: 311
+
+-------------------------------------------------------
+2023 - Yas Island
+
+Total Laps: 1157
+Valid Dry Laps: 1157
+Clean Green Laps: 1052
+Final Laps with History: 830
+
+-------------------------------------------------------
+2024 - Sakhir
+
+Total Laps: 1129
+Valid Dry Laps: 1129
+Clean Green Laps: 988
+Final Laps with History: 744
+
+-------------------------------------------------------
+2024 - Jeddah
+
+Total Laps: 901
+Valid Dry Laps: 901
+Clean Green Laps: 805
+Final Laps with History: 644
+
+-------------------------------------------------------
+2024 - Melbourne
+
+Total Laps: 998
+Valid Dry Laps: 998
+Clean Green Laps: 869
+Final Laps with History: 671
+
+-------------------------------------------------------
+2024 - Suzuka
+
+Total Laps: 907
+Valid Dry Laps: 907
+Clean Green Laps: 768
+Final Laps with History: 543
+
+-------------------------------------------------------
+2024 - Shanghai
+
+Total Laps: 1032
+Valid Dry Laps: 1032
+Clean Green Laps: 758
+Final Laps with History: 573
+
+-------------------------------------------------------
+2024 - Miami
+
+Total Laps: 1111
+Valid Dry Laps: 1111
+Clean Green Laps: 935
+Final Laps with History: 705
+
+-------------------------------------------------------
+2024 - Imola
+
+Total Laps: 1238
+Valid Dry Laps: 1238
+Clean Green Laps: 1172
+Final Laps with History: 1010
+
+-------------------------------------------------------
+2024 - Monaco
+
+Total Laps: 1237
+Valid Dry Laps: 1237
+Clean Green Laps: 1168
+Final Laps with History: 1054
+
+-------------------------------------------------------
+2024 - Montréal
+
+Rain detected at 0 days 00:50:51.126000. Dropped all subsequent laps.
+Total Laps: 426
+Valid Dry Laps: 0
+Clean Green Laps: 0
+Final Laps with History: 0
+
+-------------------------------------------------------
+2024 - Barcelona
+
+Rain detected at 0 days 01:00:59.742000. Dropped all subsequent laps.
+Total Laps: 1310
+Valid Dry Laps: 40
+Clean Green Laps: 39
+Final Laps with History: 0
+
+-------------------------------------------------------
+2024 - Spielberg
+
+Total Laps: 1405
+Valid Dry Laps: 1405
+Clean Green Laps: 1257
+Final Laps with History: 976
+
+-------------------------------------------------------
+2024 - Silverstone
+
+Rain detected at 0 days 01:25:10.819000. Dropped all subsequent laps.
+Total Laps: 727
+Valid Dry Laps: 322
+Clean Green Laps: 317
+Final Laps with History: 256
+
+-------------------------------------------------------
+2024 - Budapest
+
+Total Laps: 1355
+Valid Dry Laps: 1355
+Clean Green Laps: 1247
+Final Laps with History: 1003
+
+-------------------------------------------------------
+2024 - Spa-Francorchamps
+
+Total Laps: 841
+Valid Dry Laps: 841
+Clean Green Laps: 746
+Final Laps with History: 533
+
+-------------------------------------------------------
+2024 - Zandvoort
+
+Total Laps: 1426
+Valid Dry Laps: 1426
+Clean Green Laps: 1369
+Final Laps with History: 1222
+
+-------------------------------------------------------
+2024 - Monza
+
+Total Laps: 1008
+Valid Dry Laps: 1008
+Clean Green Laps: 934
+Final Laps with History: 761
+
+-------------------------------------------------------
+2024 - Baku
+
+Total Laps: 973
+Valid Dry Laps: 973
+Clean Green Laps: 869
+Final Laps with History: 707
+
+-------------------------------------------------------
+2024 - Marina Bay
+
+Total Laps: 1177
+Valid Dry Laps: 1177
+Clean Green Laps: 1117
+Final Laps with History: 972
+
+-------------------------------------------------------
+2024 - Austin
+
+Total Laps: 1059
+Valid Dry Laps: 1059
+Clean Green Laps: 852
+Final Laps with History: 573
+
+-------------------------------------------------------
+2024 - Mexico City
+
+Total Laps: 1215
+Valid Dry Laps: 1215
+Clean Green Laps: 1052
+Final Laps with History: 916
+
+-------------------------------------------------------
+2024 - São Paulo
+
+Total Laps: 0
+Valid Dry Laps: 0
+Clean Green Laps: 0
+Final Laps with History: 0
+
+-------------------------------------------------------
+2024 - Las Vegas
+
+Total Laps: 938
+Valid Dry Laps: 938
+Clean Green Laps: 852
+Final Laps with History: 671
+
+-------------------------------------------------------
+2024 - Lusail
+
+Total Laps: 943
+Valid Dry Laps: 943
+Clean Green Laps: 664
+Final Laps with History: 483
+
+-------------------------------------------------------
+2024 - Yas Island
+
+Total Laps: 1035
+Valid Dry Laps: 1035
+Clean Green Laps: 857
+Final Laps with History: 642
+
+-------------------------------------------------------
+2025 - Melbourne
+
+Rain detected at 0 days 02:30:19.994000. Dropped all subsequent laps.
+Total Laps: 177
+Valid Dry Laps: 155
+Clean Green Laps: 32
+Final Laps with History: 0
+
+-------------------------------------------------------
+2025 - Shanghai
+
+Total Laps: 1065
+Valid Dry Laps: 1065
+Clean Green Laps: 942
+Final Laps with History: 758
+
+-------------------------------------------------------
+2025 - Suzuka
+
+Total Laps: 1059
+Valid Dry Laps: 1059
+Clean Green Laps: 1009
+Final Laps with History: 872
+
+-------------------------------------------------------
+2025 - Sakhir
+
+Total Laps: 1128
+Valid Dry Laps: 1128
+Clean Green Laps: 964
+Final Laps with History: 728
+
+-------------------------------------------------------
+2025 - Jeddah
+
+Total Laps: 898
+Valid Dry Laps: 898
+Clean Green Laps: 798
+Final Laps with History: 664
+
+-------------------------------------------------------
+2025 - Miami Gardens
+
+Rain detected at 0 days 01:43:38.548000. Dropped all subsequent laps.
+Total Laps: 559
+Valid Dry Laps: 89
+Clean Green Laps: 61
+Final Laps with History: 13
+
+-------------------------------------------------------
+2025 - Imola
+
+Total Laps: 1207
+Valid Dry Laps: 1207
+Clean Green Laps: 957
+Final Laps with History: 750
+
+-------------------------------------------------------
+2025 - Monaco
+
+Total Laps: 1425
+Valid Dry Laps: 1425
+Clean Green Laps: 1165
+Final Laps with History: 879
+
+-------------------------------------------------------
+2025 - Barcelona
+
+Total Laps: 1203
+Valid Dry Laps: 1203
+Clean Green Laps: 998
+Final Laps with History: 758
+
+-------------------------------------------------------
+2025 - Montréal
+
+Total Laps: 1349
+Valid Dry Laps: 1349
+Clean Green Laps: 1172
+Final Laps with History: 969
+
+-------------------------------------------------------
+2025 - Spielberg
+
+Total Laps: 1127
+Valid Dry Laps: 1127
+Clean Green Laps: 984
+Final Laps with History: 791
+
+-------------------------------------------------------
+2025 - Silverstone
+
+Total Laps: 218
+Valid Dry Laps: 218
+Clean Green Laps: 138
+Final Laps with History: 76
+
+-------------------------------------------------------
+2025 - Spa-Francorchamps
+
+Total Laps: 583
+Valid Dry Laps: 583
+Clean Green Laps: 549
+Final Laps with History: 477
+
+-------------------------------------------------------
+2025 - Budapest
+
+Total Laps: 1368
+Valid Dry Laps: 1368
+Clean Green Laps: 1294
+Final Laps with History: 1112
+
+-------------------------------------------------------
+2025 - Zandvoort
+
+Total Laps: 1364
+Valid Dry Laps: 1364
+Clean Green Laps: 1017
+Final Laps with History: 689
+
+-------------------------------------------------------
+2025 - Monza
+
+Total Laps: 975
+Valid Dry Laps: 975
+Clean Green Laps: 895
+Final Laps with History: 694
+
+-------------------------------------------------------
+2025 - Baku
+
+Total Laps: 968
+Valid Dry Laps: 968
+Clean Green Laps: 796
+Final Laps with History: 605
+
+-------------------------------------------------------
+2025 - Marina Bay
+
+Total Laps: 1229
+Valid Dry Laps: 1229
+Clean Green Laps: 1124
+Final Laps with History: 854
+
+-------------------------------------------------------
+2025 - Austin
+
+Total Laps: 1067
+Valid Dry Laps: 1067
+Clean Green Laps: 898
+Final Laps with History: 657
+
+-------------------------------------------------------
+2025 - Mexico City
+
+Total Laps: 1263
+Valid Dry Laps: 1263
+Clean Green Laps: 1123
+Final Laps with History: 899
+
+-------------------------------------------------------
+2025 - São Paulo
+
+Total Laps: 1251
+Valid Dry Laps: 1251
+Clean Green Laps: 1032
+Final Laps with History: 879
+
+-------------------------------------------------------
+2025 - Las Vegas
+
+Total Laps: 886
+Valid Dry Laps: 886
+Clean Green Laps: 760
+Final Laps with History: 616
+
+-------------------------------------------------------
+2025 - Lusail
+
+Total Laps: 1067
+Valid Dry Laps: 1067
+Clean Green Laps: 923
+Final Laps with History: 706
+
+-------------------------------------------------------
+2025 - Yas Island
+
+Total Laps: 1156
+Valid Dry Laps: 1156
+Clean Green Laps: 1064
+Final Laps with History: 836
+
+-------------------------------------------------------
+Total time taken: 157.54 minutes
+Total laps: 57326
+
+-------------------------------------------------------
+Post-hoc NaN cleanup
+Dropped 94 rows with NaN (features)
+Remaining: 57232 rows

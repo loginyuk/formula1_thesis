@@ -1,0 +1,45 @@
+No-correlated-features
+Model: XGBoost (tuned params)
+High correlation pairs: 26
+
+Dropped 17 features:
+  Cumulative_Field_Dist_KM  (correlated with Track_Evolution, |r|=1.000)
+  Rolling_Avg_3  (correlated with Lag_2, |r|=0.999)
+  Lag_2  (correlated with Prev_LapTime, |r|=0.998)
+  LatOffset_Std  (correlated with LatOffset_Mean, |r|=0.982)
+  Total_Min_Pressure  (correlated with Min_Pressure_Front_PSI, |r|=0.974)
+  Aero_Loss  (correlated with Gap_To_Car_Ahead, |r|=0.963)
+  FuelLoad  (correlated with LapNumber, |r|=0.952)
+  Dirty_Air_Fraction  (correlated with Gap_To_Car_Ahead, |r|=0.938)
+  Track_Flow_Type  (correlated with Lateral_1_5, |r|=0.906)
+  Circuit_Length_KM  (correlated with Track_Evolution, |r|=0.904)
+  Min_Pressure_Rear_PSI  (correlated with Min_Pressure_Front_PSI, |r|=0.892)
+  Tyre_Compound_Interaction  (correlated with TyreLife, |r|=0.851)
+  Wear_Severity_Index  (correlated with Asphalt_Abrasion_1_5, |r|=0.845)
+  Style_Cluster_ID  (correlated with P_0, |r|=0.814)
+  Lateral_1_5  (correlated with Tyre_Stress_1_5, |r|=0.801)
+  Std_Brake_Point_Norm  (correlated with Mean_Brake_Point_Norm, |r|=0.799)
+  Std_Throttle_Integral_Norm  (correlated with Std_Throttle_On_Dist_Norm, |r|=0.792)
+
+Features used: 48 / 65
+
+Total races in dataset: 83
+Initial training on first 5 races
+
+
+Metrics:
+  MAE:  0.339 s
+  RMSE: 0.566 s
+  R2:   0.9971
+  MAPE: 0.39 %
+
+----------------------------------------
+Delta vs full XGBoost (positive = no_correlated is better):
+----------------------------------------
+Metric     Full  NoCorrelated     Delta
+   MAE 0.336800      0.338900 -0.002100
+  RMSE 0.564000      0.566200 -0.002100
+    R2 0.997167      0.997145 -0.000021
+  MAPE 0.384500      0.387100 -0.002600
+
+Total time: 34.5 s
