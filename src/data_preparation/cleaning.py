@@ -1,14 +1,14 @@
 from sklearn.preprocessing import LabelEncoder
-from src.utils import log
 
+from src.config import MODEL_FEATURES
+from src.utils import log
 
 def remove_wet_laps(df, summary_lines):
     """
-    Cleans wet laps from a dataframe
+    Clean wet laps and all laps after the rain starts
     """
     df_dry = df.copy()
 
-    # remove all laps during or after rainfall starts
     rainy_laps = df_dry[df_dry['Rainfall'] == True]
 
     if not rainy_laps.empty:
@@ -16,77 +16,65 @@ def remove_wet_laps(df, summary_lines):
         df_dry = df_dry[df_dry['Time'] < first_rain_time]
         log(summary_lines, f"Rain detected at {first_rain_time}. Dropped all subsequent laps.")
 
-    log(summary_lines, f"Total Laps input: {len(df)}")
-    log(summary_lines, f"Valid Dry Laps saved: {len(df_dry)}\n")
+    log(summary_lines, f"Total Laps: {len(df)}")
+    log(summary_lines, f"Valid Dry Laps: {len(df_dry)}")
 
     return df_dry
 
 
 def clean_laps(df, summary_lines):
     """
-    Deletes in/out, SC/VSC laps and keeps only needed columns
+    Delete in/out, SC/VSC laps and keep only needed columns
     """
-    # remove rain
     df_dry = remove_wet_laps(df, summary_lines)
 
-    # filter green flag laps with real timing and no pit stops
     mask = (
-        (df_dry['TrackStatus'] == '1') &       # green flag only
-        (df_dry['FastF1Generated'] == False) & # real timing only
+        (df_dry['TrackStatus'] == '1') &       # green flag
+        (df_dry['FastF1Generated'] == False) & # real timing
         (df_dry['PitInTime'].isna()) &         # no pit in laps
         (df_dry['PitOutTime'].isna()) &        # no pit out laps
         (df_dry['Deleted'] == False)           # not deleted laps
     )
     df_clean = df_dry.loc[mask].copy()
 
-    # clean up columns
-    cols_to_keep = ['Time', 'Year', 'RoundNumber', 'Driver', 'LapTime', 'LapNumber', 'Stint', 'Compound',
-       'TyreLife', 'Team', 'Location', 'Position', 'AirTemp', 'Humidity', 'Pressure',
-       'Rainfall', 'TrackTemp', 'WindDirection', 'WindSpeed', 'LapTime_Sec',
-       'FuelLoad', 'Track_Evolution_Physics', 'Traction_1_5',
-       'Asphalt_Grip_1_5', 'Asphalt_Abrasion_1_5', 'Track_Evolution_1_5',
-       'Tyre_Stress_1_5', 'Braking_1_5', 'Lateral_1_5', 'Downforce_1_5',
-       'Min_Pressure_Front_PSI', 'Min_Pressure_Rear_PSI', 'Compound_Hard',
-       'Compound_Medium', 'Compound_Soft', 'Circuit_Length_KM', 'Total_Laps',
-       'Cumulative_Field_Dist_KM', 'Track_Evolution_Physics.1',
-       'Compound_Hard_Hardness', 'Compound_Medium_Hardness', 'Compound_Soft_Hardness',
-       'Compound_Hard_Int', 'Compound_Medium_Int', 'Compound_Soft_Int',
-       'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int',
-       'Tyre_Compound_Interaction', 'E_lap',
-       'Gap_To_Car_Ahead', 'Dirty_Air_Fraction', 'DRS_Fraction',
-       'Tyre_Grip_Index', 'Aero_Loss',
-       'P_surface', 'M_aero', 'Lap_Damage',
-       'Accumulated_Tyre_Wear', 'Micro_Stint_ID', 'Prev_LapTime',
-       'Lag_2', 'Rolling_Avg_3',
-       'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta',
-       'LatOffset_Mean', 'LatOffset_Std',
-       'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
-       'Mean_Brake_Fraction', 'Std_Brake_Fraction',
-       'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
-       'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
-       'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
-       'Mean_Speed_CV', 'Std_Speed_CV',
-       'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
-       'Target_Delta', 'Prev_Delta']
+    # keep only needed columns
+    cols_to_keep = ['Time', 'Year', 'RoundNumber', 'Driver', 'LapTime',
+        'LapNumber', 'Stint', 'Compound', 'TyreLife', 'Team',
+        'Location', 'Position', 'AirTemp', 'Humidity', 'Pressure', 'FuelLoad',
+        'TrackTemp', 'WindDirection', 'WindSpeed', 'LapTime_Sec',
+        'Track_Evolution', 'Traction_1_5', 'Asphalt_Grip_1_5', 'Asphalt_Abrasion_1_5',
+        'Track_Evolution_1_5', 'Tyre_Stress_1_5', 'Braking_1_5', 'Lateral_1_5', 'Downforce_1_5',
+        'Min_Pressure_Front_PSI', 'Min_Pressure_Rear_PSI', 'Circuit_Length_KM',
+        'Cumulative_Field_Dist_KM', 'Wear_Severity_Index', 'Track_Flow_Type', 'Compound_Int',
+        'Tyre_Compound_Interaction', 'Energy_Lap', 'Gap_To_Car_Ahead', 'Dirty_Air_Fraction',
+        'DRS_Fraction', 'Aero_Loss', 'Lap_Damage',
+        'Accumulated_Tyre_Wear', 'Prev_LapTime', 'Lag_2', 'Rolling_Avg_3',
+        'Grip_Aero_Balance', 'Total_Min_Pressure', 'Pressure_Delta', 'LatOffset_Mean', 'LatOffset_Std',
+        'Mean_Apex_Speed_Ratio', 'Std_Apex_Speed_Ratio',
+        'Mean_Brake_Fraction', 'Std_Brake_Fraction',
+        'Mean_Brake_Point_Norm', 'Std_Brake_Point_Norm',
+        'Mean_Throttle_On_Dist_Norm', 'Std_Throttle_On_Dist_Norm',
+        'Mean_Throttle_Integral_Norm', 'Std_Throttle_Integral_Norm',
+        'Mean_Speed_Variability', 'Std_Speed_Variability',
+        'P_0', 'P_1', 'P_2', 'Style_Cluster_ID', 'Style_Entropy',
+        'Target_Delta', 'Prev_Delta']
 
     valid_cols = [c for c in cols_to_keep if c in df_clean.columns]
-
-    log(summary_lines, f"Clean Green Laps: {len(df_clean)}\n")
+    log(summary_lines, f"Clean Green Laps: {len(df_clean)}")
 
     return df_clean[valid_cols].sort_values(by=['Driver', 'LapNumber']).reset_index(drop=True)
 
 
 def add_lag_features(df_clean, summary_lines):
     """
-    Add to dataframe lag features of previous times
+    Add lag features of previous times
     """
     df_ts = df_clean.copy()
 
+    # micro-stint extraction
     df_ts = df_ts.sort_values(by=['Driver', 'LapNumber'])
     df_ts['Lap_Gap'] = df_ts.groupby('Driver')['LapNumber'].diff()
-
     condition = (df_ts['Lap_Gap'] > 1) | (df_ts['Lap_Gap'].isna())
-
     df_ts['Micro_Stint_ID'] = condition.groupby(df_ts['Driver']).cumsum()
     stint_group = df_ts.groupby(['Driver', 'Micro_Stint_ID'])
 
@@ -101,6 +89,14 @@ def add_lag_features(df_clean, summary_lines):
 
     df_ts = df_ts.dropna(subset=['Prev_LapTime', 'Rolling_Avg_3']).reset_index(drop=True)
     df_ts = df_ts.drop(columns=['Micro_Stint_ID'])
+    after_lag = len(df_ts)
+
+    # drop laps with NaN in any feature
+    available_features = [f for f in MODEL_FEATURES if f in df_ts.columns]
+    df_ts = df_ts.dropna(subset=available_features).reset_index(drop=True)
+    dropped_nan = after_lag - len(df_ts)
+    if dropped_nan > 0:
+        log(summary_lines, f"Dropped {dropped_nan} laps with NaN in modeling features")
 
     log(summary_lines, f"Final Laps with History: {len(df_ts)}")
     return df_ts
@@ -108,7 +104,7 @@ def add_lag_features(df_clean, summary_lines):
 
 def encode_categorical_features(df):
     """
-    Label encodes 'Driver', 'Location', and 'Team' columns.
+    Encode categorical features
     """
     df_encoded = df.copy()
     encoders = {}
@@ -116,11 +112,8 @@ def encode_categorical_features(df):
     cols_to_encode = ['Driver', 'Location', 'Team']
 
     for col in cols_to_encode:
-        if col in df_encoded.columns:
-            le = LabelEncoder()
-            df_encoded[f"{col}_Encoded"] = le.fit_transform(df_encoded[col].astype(str))
-            encoders[col] = le
-        else:
-            print(f"Column '{col}' not found in dataframe")
+        le = LabelEncoder()
+        df_encoded[f"{col}_Encoded"] = le.fit_transform(df_encoded[col].astype(str))
+        encoders[col] = le
 
     return df_encoded, encoders

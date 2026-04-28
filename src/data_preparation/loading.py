@@ -1,9 +1,8 @@
 import pandas as pd
 
-
 def prepare_race(session):
     """
-    Get laps, drivers and stints dataframes for the race
+    Get laps, drivers and stints df from a session
     """
     laps = session.laps
     laps['Location'] = session.event['Location']
@@ -26,21 +25,20 @@ def merge_weather(session, laps):
     Merge weather data with laps data
     """
     df = laps.copy()
-
     weather = session.weather_data.copy()
 
     df = df.sort_values('Time')
     weather = weather.sort_values('Time')
 
     df_weather = pd.merge_asof(df, weather, on='Time', direction='backward')
-
     df_weather['LapTime_Sec'] = df_weather['LapTime'].dt.total_seconds()
+
     return df_weather
 
 
 def get_pirelli_press_data(file_path):
     """
-    Loads Pirelli press dataset from CSV
+    Load Pirelli press dataset
     """
     df = pd.read_csv(file_path)
     return df
