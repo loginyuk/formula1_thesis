@@ -1,4 +1,4 @@
-# Formula 1 Race Pace Prediction Using Machine Learning with Integrated Vehicle Dynamics and Driver Styles
+# Formula 1 Race Pace Prediction Using Machine Learning with Integrated Vehicle Dynamics and Driving Styles
 
 A machine learning pipeline that predicts Formula 1 lap times by combining telemetry-derived vehicle dynamics, physics-based models, and GMM-based driving style clustering. The system uses walk-forward temporal validation across 4 seasons (2022-2025), achieving a best MAE of **0.333 seconds** (R² = 0.9973) on absolute lap times with LightGBM.
 
