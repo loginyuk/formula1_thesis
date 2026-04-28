@@ -9,3 +9,4 @@ seaborn
 optuna
 catboost
 lightgbm
+shap
