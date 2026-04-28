@@ -1,18 +1,7 @@
-"""
-run_model_comparison.py
-───────────────────────
-Walk-forward validation across multiple model families.
-Uses tuned params from best_params.json where available, falls back to MODEL_DEFAULTS.
-
-Run from project root:
-    python scripts/run_model_comparison.py
-"""
-
 import os
 import sys
 import json
 import time
-
 import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor
@@ -27,20 +16,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import (
     SUMMARIES_DIR, RESULTS_MODEL_DIR, MODEL_FEATURES, DATASET_ALL,
-    MIN_TRAIN_RACES, BEST_PARAMS_FILE, MODEL_DEFAULTS,
+    MIN_TRAIN_RACES, BEST_PARAMS_FILE, MODEL_DEFAULTS, MODELS_TO_COMPARE,
 )
 from src.utils import log, write_summary
 from src.modeling.training import run_season_walk_forward, convert_deltas_to_absolute_times, shift_telemetry_features, compute_metrics
 from src.modeling.plots import (
-    plot_full_season_slopes, plot_predicted_vs_actual, plot_residual_analysis,
+    plot_full_season_slopes, plot_pred_vs_act_errors,
     plot_per_race_mae, plot_compound_breakdown, plot_driver_mae,
 )
-from src.modeling.analysis import plot_feature_importance, plot_model_comparison
-
-MODELS_TO_COMPARE = ["XGBoost", "LightGBM", "CatBoost"]
-
+from src.modeling.analysis_plots import plot_feature_importance, plot_model_comparison
 
 def build_model(name, params):
+    """
+    Loads a model with the given name and parameters
+    """
     if name == "XGBoost":
         return XGBRegressor(**params, n_jobs=-1)
     if name == "LightGBM":
@@ -71,10 +60,13 @@ if __name__ == "__main__":
         with open(BEST_PARAMS_FILE) as f:
             best_params = json.load(f)
 
+    # load data
     df = pd.read_csv(DATASET_ALL)
     df = shift_telemetry_features(df)
 
     comparison_rows = []
+
+    log(summary_lines, "Model Comparison")
 
     for name in MODELS_TO_COMPARE:
         params = best_params.get(name, MODEL_DEFAULTS[name])
@@ -84,6 +76,7 @@ if __name__ == "__main__":
         log(summary_lines, f"Model: {name} ({source} params)")
         log(summary_lines, f"{'-'*40}")
 
+        # build model with parameters and run walk-forward validation
         model = build_model(name, params)
 
         t0 = time.time()
@@ -97,6 +90,7 @@ if __name__ == "__main__":
         metrics = compute_metrics(results['Actual'].values, results['Predicted'].values)
         elapsed = time.time() - t0
 
+        log(summary_lines, f"Metrics:")
         log(summary_lines, f"  MAE:  {metrics['MAE']:.3f} s")
         log(summary_lines, f"  RMSE: {metrics['RMSE']:.3f} s")
         log(summary_lines, f"  R2:   {metrics['R2']:.4f}")
@@ -110,14 +104,13 @@ if __name__ == "__main__":
         results.to_csv(os.path.join(model_dir, f"results_{name}.csv"), index=False)
         plot_feature_importance(df, MODEL_FEATURES, model, out_dir=model_dir)
         plot_full_season_slopes(results, 'VER', out_dir=model_dir)
-        plot_predicted_vs_actual(results, out_dir=model_dir)
-        plot_residual_analysis(results, out_dir=model_dir)
+        plot_pred_vs_act_errors(results, out_dir=model_dir)
         plot_per_race_mae(results, out_dir=model_dir)
         plot_compound_breakdown(results, out_dir=model_dir)
         plot_driver_mae(results, out_dir=model_dir)
 
     log(summary_lines, f"\n{'-'*40}")
-    log(summary_lines, "Final Comparison")
+    log(summary_lines, "Summary:")
     log(summary_lines, f"{'-'*40}")
     comp_df = plot_model_comparison(comparison_rows, out_dir=RESULTS_MODEL_DIR)
     log(summary_lines, comp_df.to_string(index=False))

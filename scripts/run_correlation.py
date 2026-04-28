@@ -1,15 +1,5 @@
-"""
-run_correlation.py
-──────────────────
-Computes and saves the feature correlation matrix and flags highly correlated pairs.
-
-Run from project root:
-    python scripts/run_correlation.py
-"""
-
 import os
 import sys
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,7 +7,7 @@ import seaborn as sns
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import MODEL_FEATURES, RESULTS_CORRELATION_DIR, DATASET_ALL
+from src.config import MODEL_FEATURES, RESULTS_CORRELATION_DIR, DATASET_ALL, HIGH_CORR_THRESHOLD
 
 OUT_DIR = RESULTS_CORRELATION_DIR
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -28,14 +18,13 @@ if __name__ == "__main__":
     available = [f for f in MODEL_FEATURES if f in df.columns]
     missing = [f for f in MODEL_FEATURES if f not in df.columns]
     if missing:
-        print(f"Missing columns (skipped): {missing}")
+        print(f"Missing columns: {missing}")
 
     df_feat = df[available].copy()
 
     # full correlation matrix
     corr = df_feat.corr()
     corr.to_csv(f'{OUT_DIR}/correlation_matrix.csv')
-    print(f"Saved correlation matrix: {len(available)} x {len(available)}")
 
     fig, ax = plt.subplots(figsize=(28, 24))
     mask = np.zeros_like(corr, dtype=bool)
@@ -45,15 +34,13 @@ if __name__ == "__main__":
         corr, mask=mask, ax=ax, cmap='RdBu_r', center=0, vmin=-1, vmax=1,
         linewidths=0.3, annot=False, square=True, cbar_kws={'shrink': 0.6, 'label': 'Pearson r'}
     )
-    ax.set_title('Feature Correlation Matrix (all training features)', fontsize=16, pad=12)
     ax.tick_params(axis='x', rotation=90, labelsize=7)
     ax.tick_params(axis='y', rotation=0, labelsize=7)
     plt.tight_layout()
     plt.savefig(f'{OUT_DIR}/correlation_matrix_full.png', dpi=200, bbox_inches='tight')
     plt.close()
-    print(f"Saved: {OUT_DIR}/correlation_matrix_full.png")
 
-    # high-correlation pairs (|r| > 0.75)
+    # high-correlation pairs (|r| > HIGH_CORR_THRESHOLD)
     corr_abs = corr.abs()
     upper = corr_abs.where(np.triu(np.ones(corr_abs.shape), k=1).astype(bool))
     high_corr = (
@@ -63,10 +50,8 @@ if __name__ == "__main__":
         .sort_values('abs_r', ascending=False)
     )
     high_corr['r'] = [corr.loc[a, b] for a, b in zip(high_corr['Feature_A'], high_corr['Feature_B'])]
-    high_corr_filtered = high_corr[high_corr['abs_r'] > 0.75]
+    high_corr_filtered = high_corr[high_corr['abs_r'] > HIGH_CORR_THRESHOLD]
 
-    print(f"\nHigh-correlation pairs (|r| > 0.75): {len(high_corr_filtered)}")
-    print(high_corr_filtered.to_string(index=False))
     high_corr_filtered.to_csv(f'{OUT_DIR}/high_correlation_pairs.csv', index=False)
 
     # focused heatmap
@@ -81,10 +66,8 @@ if __name__ == "__main__":
             annot=True, fmt='.2f', linewidths=0.4, annot_kws={'size': 7}, square=True,
             cbar_kws={'shrink': 0.7, 'label': 'Pearson r'}
         )
-        ax2.set_title(f'Highly Correlated Features (|r| > 0.75) — {len(flagged)} features', fontsize=13, pad=10)
         ax2.tick_params(axis='x', rotation=90, labelsize=8)
         ax2.tick_params(axis='y', rotation=0, labelsize=8)
         plt.tight_layout()
         plt.savefig(f'{OUT_DIR}/correlation_high_only.png', dpi=200, bbox_inches='tight')
         plt.close()
-        print(f"Saved: {OUT_DIR}/correlation_high_only.png")

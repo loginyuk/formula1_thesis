@@ -2,7 +2,6 @@ import logging
 
 from src.config import ERRORS_LOG
 
-
 class RaceContextFilter(logging.Filter):
     def __init__(self):
         super().__init__()
@@ -15,8 +14,7 @@ class RaceContextFilter(logging.Filter):
 
 def setup_file_logging(log_path=ERRORS_LOG):
     """
-    Configures the root logger with a race-context-aware file handler.
-    Returns the filter so the caller can update filter.race as processing advances.
+    Configures the root logger with a race-context-aware file handler
     """
     race_filter = RaceContextFilter()
 
