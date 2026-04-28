@@ -3,18 +3,17 @@ cache/
 __pycache__
 .vscode/
 
-errors.txt
-test.py
+docs/
+archive/
+tests/
+catboost_info/
 
 results/older
-results/clustering/2023_Silverstone/drivers/
+results/feature_analysis/
 results/clustering/verification/
+drivers/
+2023_Austin_k3/
+2023_Monza_k3/
+2023_Suzuka_k3/
 
 races_degradations_VER.png
-
-logs/with_errors
-
-documentation
-archive/
-
-catboost_info/
