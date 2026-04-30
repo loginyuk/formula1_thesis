@@ -23,7 +23,7 @@ formula1_thesis/
 │   │   └── k_comparison_plots.py # K-comparison (radar, sizes, PCA)
 │   ├── telemetry/                # Telemetry-derived feature engineering
 │   │   ├── curvature.py          # GPS curvature with arc-length parameterisation
-│   │   ├── tyre.py               # tyre energy + lap damage / accumulated wear
+│   │   ├── tyre.py               # tyre energy, lap damage and accumulated wear
 │   │   ├── aero.py               # dirty air, gap, aero loss
 │   │   ├── line.py               # reference lap, lateral offset
 │   │   └── pipeline.py           # telemetry orchestration
@@ -42,16 +42,16 @@ formula1_thesis/
 ├── scripts/                          # Runnable entry points
 │   ├── run_data_pipeline.py          # build full 2022-2025 dataset
 │   ├── run_combine_tracks.py         # merge per-year Pirelli track parameter CSVs
-│   ├── run_correlation.py            # correlation matrix and high-r pair extraction
-│   ├── run_clustering_single.py      # GMM clustering for a single race (with plots)
-│   ├── run_clustering_k2.py          # K=2 clustering across all races (for ablation)
+│   ├── run_correlation.py            # correlation matrix
+│   ├── run_clustering_single.py      # GMM clustering for a single race
+│   ├── run_clustering_k2.py          # K=2 clustering across all races
 │   ├── run_cluster_k_comparison.py   # BIC / silhouette / PCA across K = 2..5
 │   ├── run_hyperparameter_tuning.py  # Optuna Bayesian tuning (TimeSeriesSplit CV)
 │   ├── run_model_training.py         # train PRIMARY_MODEL with walk-forward
 │   ├── run_model_comparison.py       # compare all 5 models with diagnostic plots
 │   ├── run_model_comparison_k2.py    # model comparison using K=2 clustering features
 │   ├── run_model_no_clustering.py    # ablation: with vs without clustering features
-│   ├── run_model_no_correlated.py    # ablation: drop one feature from each high-r pair
+│   ├── run_model_no_correlated.py    # ablation: drop one feature from each high-correlated pair
 │   └── run_shap_analysis.py          # Tree SHAP analysis (global / by bucket / over time)
 │
 ├── data/
@@ -60,7 +60,7 @@ formula1_thesis/
 ├── results/
 │   ├── model/                    # per-model results, plots, ablation outputs
 │   ├── clustering/               # cluster timelines, verification, K comparison
-│   └── correlation/              # correlation matrix, high-r pairs
+│   └── correlation/              # correlation matrix, high-correlated pairs
 ├── logs/                         # error logs and training summaries
 ├── cache/                        # FastF1 telemetry cache
 ├── notebooks/                    # Jupyter experiments
@@ -113,7 +113,7 @@ $$E_{lap} = \frac{1}{1000} \sum \sqrt{a_{long}^2 + a_{lat}^2} \cdot v \cdot dt$$
 
 A physics-inspired degradation model then accumulates wear per stint:
 
-$$\text{Lap\_Damage} = E_{lap} \times (W_{sev} \times (C_{int} + 1)) \times M_{aero}$$
+$$\text{Lap Damage} = E_{lap} \times (W_{sev} \times (C_{int} + 1)) \times M_{aero}$$
 
 where $M_{aero} = 1.15$ if gap to car ahead $< 2\,\text{s}$ (dirty air increases tyre sliding), else $1.0$.
 
@@ -363,7 +363,7 @@ All configurable parameters are centralised in [src/config.py](src/config.py):
 
 ### Model Comparison
 
-All models evaluated with Optuna-tuned hyperparameters using walk-forward validation across 78 test races (initial 5 training races, 84 total races):
+All models evaluated with Optuna-tuned hyperparameters using walk-forward validation across 78 test races (initial 5 training races, 83 total races):
 
 | Model | MAE (s) | RMSE (s) | R² | MAPE (%) | Training Time |
 |---|---|---|---|---|---|
